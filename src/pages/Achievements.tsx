@@ -6,155 +6,6 @@ import { EnhancedBadgeSystem, EnhancedAchievement } from '@/components/achieveme
 import { GameStateManager } from '@/lib/gameState';
 
 const Achievements = () => {
-  // Enhanced achievements data with all the features like Kahoot/Duolingo
-  const achievements: EnhancedAchievement[] = [
-    {
-      id: '1',
-      type: 'legendary',
-      category: 'completion',
-      title: 'Quiz Legend',
-      description: 'Complete 100 quizzes with 90%+ accuracy',
-      icon: 'crown',
-      earned: true,
-      earnedDate: '2024-01-15',
-      rarity: 'legendary',
-      xpReward: 500,
-      level: 25,
-      difficulty: 'extreme'
-    },
-    {
-      id: '2',
-      type: 'epic',
-      category: 'speed',
-      title: 'Speed Demon',
-      description: 'Answer 10 questions in under 5 seconds each',
-      icon: 'zap',
-      earned: true,
-      earnedDate: '2024-01-10',
-      rarity: 'epic',
-      xpReward: 250,
-      level: 15,
-      difficulty: 'hard'
-    },
-    {
-      id: '3',
-      type: 'rare',
-      category: 'streak',
-      title: 'Consistent Learner',
-      description: 'Maintain a 15-day learning streak',
-      icon: 'target',
-      earned: true,
-      earnedDate: '2024-01-05',
-      rarity: 'rare',
-      xpReward: 150,
-      level: 10,
-      difficulty: 'medium'
-    },
-    {
-      id: '4',
-      type: 'common',
-      category: 'knowledge',
-      title: 'Subject Explorer',
-      description: 'Complete quizzes in 5 different subjects',
-      icon: 'book',
-      earned: true,
-      earnedDate: '2024-01-01',
-      rarity: 'common',
-      xpReward: 100,
-      level: 5,
-      difficulty: 'easy'
-    },
-    {
-      id: '5',
-      type: 'special',
-      category: 'accuracy',
-      title: 'Perfect Score',
-      description: 'Get 100% on 3 consecutive quizzes',
-      icon: 'star',
-      earned: false,
-      progress: 2,
-      maxProgress: 3,
-      rarity: 'epic',
-      xpReward: 300,
-      level: 8,
-      difficulty: 'hard'
-    },
-    {
-      id: '6',
-      type: 'rare',
-      category: 'social',
-      title: 'Top Competitor',
-      description: 'Reach top 10 on global leaderboard',
-      icon: 'trophy',
-      earned: false,
-      progress: 15,
-      maxProgress: 10,
-      rarity: 'rare',
-      xpReward: 400,
-      level: 20,
-      difficulty: 'hard'
-    },
-    {
-      id: '7',
-      type: 'common',
-      category: 'speed',
-      title: 'Quick Thinker',
-      description: 'Average response time under 8 seconds',
-      icon: 'clock',
-      earned: false,
-      progress: 9,
-      maxProgress: 8,
-      rarity: 'common',
-      xpReward: 120,
-      level: 3,
-      difficulty: 'easy'
-    },
-    {
-      id: '8',
-      type: 'common',
-      category: 'knowledge',
-      title: 'Research Master',
-      description: 'Use Smart Research 20 times',
-      icon: 'brain',
-      earned: false,
-      progress: 12,
-      maxProgress: 20,
-      rarity: 'common',
-      xpReward: 80,
-      level: 6,
-      difficulty: 'medium'
-    },
-    {
-      id: '9',
-      type: 'legendary',
-      category: 'completion',
-      title: 'Master Learner',
-      description: 'Reach level 50',
-      icon: 'crown',
-      earned: false,
-      progress: 12,
-      maxProgress: 50,
-      rarity: 'legendary',
-      xpReward: 1000,
-      level: 50,
-      difficulty: 'extreme'
-    },
-    {
-      id: '10',
-      type: 'special',
-      category: 'social',
-      title: 'Community Helper',
-      description: 'Share 5 quiz results with friends',
-      icon: 'users',
-      earned: false,
-      progress: 0,
-      maxProgress: 5,
-      rarity: 'rare',
-      xpReward: 200,
-      level: 4,
-      difficulty: 'medium'
-    }
-  ];
 
   const [gameState, setGameState] = useState(GameStateManager.getInstance().getState());
   
@@ -162,6 +13,183 @@ const Achievements = () => {
     const unsubscribe = GameStateManager.getInstance().subscribe(setGameState);
     return unsubscribe;
   }, []);
+
+  // Calculate achievements based on real user data
+  const calculateAchievements = (): EnhancedAchievement[] => {
+    const currentAccuracy = gameState.totalQuestions > 0 
+      ? Math.round((gameState.totalCorrectAnswers / gameState.totalQuestions) * 100) 
+      : 0;
+    const subjectCount = [...new Set(gameState.quizHistory.map(quiz => quiz.subject))].length;
+    const perfectScores = gameState.quizHistory.filter(quiz => quiz.correctAnswers === quiz.totalQuestions).length;
+    const averageTime = gameState.quizHistory.length > 0 
+      ? gameState.quizHistory.reduce((sum, quiz) => sum + (quiz.timeSpent / quiz.totalQuestions), 0) / gameState.quizHistory.length 
+      : 0;
+
+    return [
+      {
+        id: '1',
+        type: 'legendary',
+        category: 'completion',
+        title: 'Quiz Legend',
+        description: 'Complete 100 quizzes with 90%+ accuracy',
+        icon: 'crown',
+        earned: gameState.totalQuizzes >= 100 && currentAccuracy >= 90,
+        earnedDate: gameState.totalQuizzes >= 100 && currentAccuracy >= 90 ? new Date().toISOString().split('T')[0] : undefined,
+        rarity: 'legendary',
+        xpReward: 500,
+        level: 25,
+        difficulty: 'extreme',
+        progress: Math.min(gameState.totalQuizzes, 100),
+        maxProgress: 100
+      },
+      {
+        id: '2',
+        type: 'epic',
+        category: 'speed',
+        title: 'Speed Demon',
+        description: 'Average response time under 5 seconds',
+        icon: 'zap',
+        earned: averageTime < 5 && gameState.totalQuizzes >= 10,
+        earnedDate: averageTime < 5 && gameState.totalQuizzes >= 10 ? new Date().toISOString().split('T')[0] : undefined,
+        rarity: 'epic',
+        xpReward: 250,
+        level: 15,
+        difficulty: 'hard',
+        progress: Math.max(0, 10 - Math.round(averageTime)),
+        maxProgress: 10
+      },
+      {
+        id: '3',
+        type: 'rare',
+        category: 'streak',
+        title: 'Consistent Learner',
+        description: 'Maintain a 7-day learning streak',
+        icon: 'target',
+        earned: gameState.streak >= 7,
+        earnedDate: gameState.streak >= 7 ? new Date().toISOString().split('T')[0] : undefined,
+        rarity: 'rare',
+        xpReward: 150,
+        level: 10,
+        difficulty: 'medium',
+        progress: gameState.streak,
+        maxProgress: 7
+      },
+      {
+        id: '4',
+        type: 'common',
+        category: 'knowledge',
+        title: 'Subject Explorer',
+        description: 'Complete quizzes in 5 different subjects',
+        icon: 'book',
+        earned: subjectCount >= 5,
+        earnedDate: subjectCount >= 5 ? new Date().toISOString().split('T')[0] : undefined,
+        rarity: 'common',
+        xpReward: 100,
+        level: 5,
+        difficulty: 'easy',
+        progress: subjectCount,
+        maxProgress: 5
+      },
+      {
+        id: '5',
+        type: 'special',
+        category: 'accuracy',
+        title: 'Perfect Score',
+        description: 'Get 100% on 3 quizzes',
+        icon: 'star',
+        earned: perfectScores >= 3,
+        earnedDate: perfectScores >= 3 ? new Date().toISOString().split('T')[0] : undefined,
+        rarity: 'epic',
+        xpReward: 300,
+        level: 8,
+        difficulty: 'hard',
+        progress: perfectScores,
+        maxProgress: 3
+      },
+      {
+        id: '6',
+        type: 'common',
+        category: 'completion',
+        title: 'First Steps',
+        description: 'Complete your first quiz',
+        icon: 'trophy',
+        earned: gameState.totalQuizzes >= 1,
+        earnedDate: gameState.totalQuizzes >= 1 ? new Date().toISOString().split('T')[0] : undefined,
+        rarity: 'common',
+        xpReward: 50,
+        level: 1,
+        difficulty: 'easy',
+        progress: Math.min(gameState.totalQuizzes, 1),
+        maxProgress: 1
+      },
+      {
+        id: '7',
+        type: 'common',
+        category: 'completion',
+        title: 'Quiz Enthusiast',
+        description: 'Complete 10 quizzes',
+        icon: 'brain',
+        earned: gameState.totalQuizzes >= 10,
+        earnedDate: gameState.totalQuizzes >= 10 ? new Date().toISOString().split('T')[0] : undefined,
+        rarity: 'common',
+        xpReward: 100,
+        level: 3,
+        difficulty: 'easy',
+        progress: Math.min(gameState.totalQuizzes, 10),
+        maxProgress: 10
+      },
+      {
+        id: '8',
+        type: 'rare',
+        category: 'accuracy',
+        title: 'High Achiever',
+        description: 'Maintain 80%+ accuracy over 20 quizzes',
+        icon: 'star',
+        earned: gameState.totalQuizzes >= 20 && currentAccuracy >= 80,
+        earnedDate: gameState.totalQuizzes >= 20 && currentAccuracy >= 80 ? new Date().toISOString().split('T')[0] : undefined,
+        rarity: 'rare',
+        xpReward: 200,
+        level: 8,
+        difficulty: 'medium',
+        progress: gameState.totalQuizzes >= 20 ? currentAccuracy : gameState.totalQuizzes,
+        maxProgress: gameState.totalQuizzes >= 20 ? 80 : 20
+      },
+      {
+        id: '9',
+        type: 'epic',
+        category: 'mastery',
+        title: 'Level Master',
+        description: 'Reach level 10',
+        icon: 'crown',
+        earned: gameState.level >= 10,
+        earnedDate: gameState.level >= 10 ? new Date().toISOString().split('T')[0] : undefined,
+        rarity: 'epic',
+        xpReward: 500,
+        level: 10,
+        difficulty: 'hard',
+        progress: gameState.level,
+        maxProgress: 10
+      },
+      {
+        id: '10',
+        type: 'common',
+        category: 'exploration',
+        title: 'XP Collector',
+        description: 'Earn 1000 XP',
+        icon: 'zap',
+        earned: gameState.totalXP >= 1000,
+        earnedDate: gameState.totalXP >= 1000 ? new Date().toISOString().split('T')[0] : undefined,
+        rarity: 'common',
+        xpReward: 100,
+        level: 5,
+        difficulty: 'easy',
+        progress: Math.min(gameState.totalXP, 1000),
+        maxProgress: 1000
+      }
+    ];
+  };
+
+  const achievements = calculateAchievements();
 
   const userStats = {
     totalXP: gameState.totalXP,

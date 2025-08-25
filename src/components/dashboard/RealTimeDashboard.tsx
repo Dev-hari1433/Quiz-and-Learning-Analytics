@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
+import { GameStateManager } from '@/lib/gameState';
 
 interface RealTimeStats {
   currentXP: number;
@@ -35,62 +36,73 @@ interface RealTimeStats {
 
 export const RealTimeDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [isLive, setIsLive] = useState(true);
-  const [stats, setStats] = useState<RealTimeStats>({
-    currentXP: 0,
-    maxXP: 1000,
-    level: 1,
-    todayXP: 0,
-    streak: 0,
-    totalQuizzes: 0,
-    correctAnswers: 0,
-    averageTime: "0m",
-    rank: 100,
-    activeLearners: 156,
-    todayTime: 0,
-    weeklyGoal: 0,
-    monthlyGoal: 0,
-    currentAccuracy: 0,
-    recentPerformance: [0, 0, 0, 0, 0, 0, 0],
-    topSubjects: [
-      { name: 'Mathematics', score: 0, improvement: 0 },
-      { name: 'Science', score: 0, improvement: 0 },
-      { name: 'History', score: 0, improvement: 0 }
-    ]
-  });
+  const [gameState, setGameState] = useState(GameStateManager.getInstance().getState());
 
-  // Real-time updates
   useEffect(() => {
-    if (!isLive) return;
+    const gameManager = GameStateManager.getInstance();
+    const unsubscribe = gameManager.subscribe(setGameState);
+    return unsubscribe;
+  }, []);
 
-    const interval = setInterval(() => {
-      setStats(prev => {
-        const xpGain = Math.floor(Math.random() * 20) + 5;
-        const timeGain = Math.floor(Math.random() * 10) + 2;
-        const newAccuracy = Math.max(75, Math.min(100, prev.currentAccuracy + (Math.random() - 0.5) * 5));
-        
-        return {
-          ...prev,
-          currentXP: Math.min(prev.maxXP, prev.currentXP + xpGain),
-          todayXP: prev.todayXP + xpGain,
-          todayTime: prev.todayTime + timeGain,
-          weeklyGoal: Math.min(100, prev.weeklyGoal + Math.random() * 3),
-          monthlyGoal: Math.min(100, prev.monthlyGoal + Math.random() * 1.5),
-          currentAccuracy: Math.round(newAccuracy),
-          recentPerformance: [...prev.recentPerformance.slice(-6), Math.round(newAccuracy)],
-          activeLearners: Math.floor(Math.random() * 50) + 130,
-          rank: Math.max(1, prev.rank + (Math.random() > 0.6 ? 1 : -1)),
-          topSubjects: prev.topSubjects.map(subject => ({
-            ...subject,
-            score: Math.max(75, Math.min(100, subject.score + (Math.random() - 0.5) * 2)),
-            improvement: Math.max(-5, Math.min(20, subject.improvement + (Math.random() - 0.5) * 3))
-          }))
-        };
-      });
-    }, 3000);
+  // Calculate real stats from game state
+  const currentXP = gameState.totalXP % 1000;
+  const maxXP = 1000;
+  const level = gameState.level;
+  const todayXP = getTodayXP();
+  const currentAccuracy = gameState.totalQuestions > 0 
+    ? Math.round((gameState.totalCorrectAnswers / gameState.totalQuestions) * 100) 
+    : 0;
+  const formatTime = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+  };
 
-    return () => clearInterval(interval);
-  }, [isLive]);
+  const averageTime = formatTime(getAverageQuizTime());
+  const recentPerformance = getRecentPerformance();
+  const topSubjects = getTopSubjects();
+
+  function getTodayXP(): number {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return gameState.quizHistory
+      .filter(quiz => quiz.timestamp >= today)
+      .reduce((total, quiz) => total + (quiz.correctAnswers * 10), 0);
+  }
+
+  function getAverageQuizTime(): number {
+    if (gameState.quizHistory.length === 0) return 0;
+    return gameState.quizHistory.reduce((sum, quiz) => sum + quiz.timeSpent, 0) / gameState.quizHistory.length;
+  }
+
+  function getRecentPerformance(): number[] {
+    return gameState.quizHistory
+      .slice(0, 7)
+      .map(quiz => Math.round((quiz.correctAnswers / quiz.totalQuestions) * 100))
+      .reverse();
+  }
+
+  function getTopSubjects() {
+    const subjectStats: { [key: string]: { total: number, correct: number, count: number } } = {};
+    
+    gameState.quizHistory.forEach(quiz => {
+      if (!subjectStats[quiz.subject]) {
+        subjectStats[quiz.subject] = { total: 0, correct: 0, count: 0 };
+      }
+      subjectStats[quiz.subject].total += quiz.totalQuestions;
+      subjectStats[quiz.subject].correct += quiz.correctAnswers;
+      subjectStats[quiz.subject].count += 1;
+    });
+
+    return Object.entries(subjectStats)
+      .map(([name, stats]) => ({
+        name,
+        score: stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0,
+        improvement: 0 // Could be calculated from historical data
+      }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3);
+  }
 
   const achievements = [
     {
@@ -123,17 +135,7 @@ export const RealTimeDashboard: React.FC = () => {
     }
   ];
 
-  const formatTime = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-  };
 
-  const getPerformanceTrend = () => {
-    const recent = stats.recentPerformance.slice(-2);
-    if (recent.length < 2) return 'stable';
-    return recent[1] > recent[0] ? 'up' : recent[1] < recent[0] ? 'down' : 'stable';
-  };
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -158,21 +160,12 @@ export const RealTimeDashboard: React.FC = () => {
           
           <div className="flex items-center gap-4">
             <Badge 
-              variant={isLive ? "default" : "secondary"} 
-              className={`flex items-center gap-2 ${isLive ? 'bg-accent animate-pulse' : ''}`}
+              variant="default"
+              className="flex items-center gap-2 bg-accent animate-pulse"
             >
               <Activity className="w-4 h-4" />
-              {isLive ? 'LIVE' : 'PAUSED'}
+              LIVE
             </Badge>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsLive(!isLive)}
-              className="flex items-center gap-2"
-            >
-              {isLive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-              {isLive ? 'Pause' : 'Resume'}
-            </Button>
           </div>
         </motion.div>
 
@@ -183,9 +176,9 @@ export const RealTimeDashboard: React.FC = () => {
           transition={{ duration: 0.5, delay: 0.2 }}
         >
           <XPBar 
-            currentXP={stats.currentXP}
-            maxXP={stats.maxXP}
-            level={stats.level}
+            currentXP={currentXP}
+            maxXP={maxXP}
+            level={level}
             className="max-w-2xl mx-auto"
           />
         </motion.div>
@@ -194,58 +187,58 @@ export const RealTimeDashboard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
           <StatsCard
             title="Today's XP"
-            value={stats.todayXP.toLocaleString()}
-            subtitle={`+${Math.floor(stats.todayXP / 10)} from last hour`}
+            value={todayXP.toLocaleString()}
+            subtitle={gameState.totalQuizzes > 0 ? "Keep learning!" : "Start your first quiz!"}
             icon={Zap}
             trend="up"
-            trendValue="+12%"
+            trendValue={`${gameState.totalXP} total`}
             color="warning"
           />
           
           <StatsCard
             title="Current Accuracy"
-            value={`${stats.currentAccuracy}%`}
-            subtitle={`${stats.correctAnswers}/${stats.totalQuizzes} correct`}
+            value={`${currentAccuracy}%`}
+            subtitle={`${gameState.totalCorrectAnswers}/${gameState.totalQuestions} correct`}
             icon={Target}
-            trend={getPerformanceTrend() === 'stable' ? 'neutral' : getPerformanceTrend() as 'up' | 'down'}
-            trendValue={`${getPerformanceTrend() === 'up' ? '+' : ''}${Math.floor(Math.random() * 5)}%`}
+            trend={currentAccuracy >= 70 ? 'up' : currentAccuracy === 0 ? 'neutral' : 'down'}
+            trendValue={currentAccuracy >= 70 ? 'Great!' : currentAccuracy === 0 ? 'Start learning' : 'Keep practicing'}
             color="accent"
           />
           
           <StatsCard
             title="Study Streak"
-            value={`${stats.streak} days`}
-            subtitle="Keep it going!"
+            value={`${gameState.streak} days`}
+            subtitle={gameState.streak > 0 ? "Keep it going!" : "Start your streak!"}
             icon={Flame}
-            trend="up"
-            trendValue="Personal best!"
+            trend={gameState.streak > 0 ? 'up' : 'neutral'}
+            trendValue={gameState.streak > 0 ? "Active" : "Build your streak"}
             color="secondary"
           />
           
           <StatsCard
-            title="Today's Time"
-            value={formatTime(stats.todayTime)}
-            subtitle="Active learning"
+            title="Study Time"
+            value={formatTime(gameState.studyTime)}
+            subtitle="Total learning time"
             icon={Clock}
             trend="up"
-            trendValue="+15m this hour"
+            trendValue={`Level ${level}`}
             color="secondary"
           />
           
           <StatsCard
-            title="Global Rank"
-            value={`#${stats.rank}`}
-            subtitle="Amazing progress!"
+            title="Current Level"
+            value={`${level}`}
+            subtitle={`${gameState.totalXP} XP earned`}
             icon={Trophy}
-            trend={stats.rank <= 5 ? 'up' : 'down'}
-            trendValue={`${stats.rank <= 5 ? 'Climbed' : 'Moved'} ${Math.floor(Math.random() * 3) + 1} spots`}
+            trend="up"
+            trendValue={`${1000 - currentXP} XP to next level`}
             color="warning"
           />
           
           <StatsCard
-            title="Active Learners"
-            value={stats.activeLearners}
-            subtitle="Online now"
+            title="Total Quizzes"
+            value={gameState.totalQuizzes}
+            subtitle="Completed"
             icon={Users}
             color="primary"
           />
@@ -263,22 +256,22 @@ export const RealTimeDashboard: React.FC = () => {
             <CardContent className="space-y-4">
               <div>
                 <div className="flex justify-between text-sm mb-2">
-                  <span>Weekly Goal</span>
-                  <span>{Math.round(stats.weeklyGoal)}%</span>
+                  <span>Level Progress</span>
+                  <span>{Math.round((currentXP / maxXP) * 100)}%</span>
                 </div>
-                <Progress value={stats.weeklyGoal} className="h-3" />
+                <Progress value={(currentXP / maxXP) * 100} className="h-3" />
                 <p className="text-xs text-muted-foreground mt-1">
-                  {100 - Math.round(stats.weeklyGoal)}% remaining
+                  {maxXP - currentXP} XP to level {level + 1}
                 </p>
               </div>
               <div>
                 <div className="flex justify-between text-sm mb-2">
-                  <span>Monthly Goal</span>
-                  <span>{Math.round(stats.monthlyGoal)}%</span>
+                  <span>Quiz Accuracy</span>
+                  <span>{currentAccuracy}%</span>
                 </div>
-                <Progress value={stats.monthlyGoal} className="h-3" />
+                <Progress value={currentAccuracy} className="h-3" />
                 <p className="text-xs text-muted-foreground mt-1">
-                  On track for monthly target
+                  {gameState.totalQuizzes > 0 ? 'Keep improving!' : 'Take your first quiz!'}
                 </p>
               </div>
             </CardContent>
@@ -293,7 +286,7 @@ export const RealTimeDashboard: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="flex items-end justify-between h-24 gap-1">
-                {stats.recentPerformance.map((score, index) => (
+                {recentPerformance.length > 0 ? recentPerformance.map((score, index) => (
                   <motion.div
                     key={index}
                     className="bg-primary/20 rounded-t flex-1 flex items-end justify-center"
@@ -306,7 +299,11 @@ export const RealTimeDashboard: React.FC = () => {
                       {score}
                     </div>
                   </motion.div>
-                ))}
+                )) : (
+                  <div className="text-center text-muted-foreground flex-1">
+                    Take quizzes to see your performance trend
+                  </div>
+                )}
               </div>
               <div className="flex justify-between text-xs text-muted-foreground mt-2">
                 <span>7 days ago</span>
@@ -323,7 +320,7 @@ export const RealTimeDashboard: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {stats.topSubjects.map((subject, index) => (
+              {topSubjects.length > 0 ? topSubjects.map((subject, index) => (
                 <motion.div 
                   key={subject.name}
                   className="flex items-center justify-between p-2 bg-muted/20 rounded"
@@ -334,16 +331,18 @@ export const RealTimeDashboard: React.FC = () => {
                   <div>
                     <div className="font-semibold text-sm">{subject.name}</div>
                     <div className="text-xs text-muted-foreground">
-                      {Math.round(subject.score)}% accuracy
+                      {subject.score}% accuracy
                     </div>
                   </div>
-                  <div className={`text-sm font-bold ${
-                    subject.improvement > 0 ? 'text-accent' : 'text-destructive'
-                  }`}>
-                    {subject.improvement > 0 ? '+' : ''}{Math.round(subject.improvement)}%
+                  <div className="text-sm font-bold text-accent">
+                    Active
                   </div>
                 </motion.div>
-              ))}
+              )) : (
+                <div className="text-center text-muted-foreground py-4">
+                  Complete quizzes to see your top subjects
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
