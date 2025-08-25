@@ -66,7 +66,7 @@ export const useRealTimeData = () => {
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('display_name', sessionUser.name)
+        .eq('user_id', sessionUser.sessionId)
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
@@ -251,7 +251,7 @@ export const useRealTimeData = () => {
       const { data: existing, error: fetchError } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('display_name', sessionUser.name)
+        .eq('user_id', sessionUser.sessionId)
         .maybeSingle();
 
       if (fetchError && fetchError.code !== 'PGRST116') {
@@ -288,7 +288,7 @@ export const useRealTimeData = () => {
       };
 
       const { error } = existing
-        ? await supabase.from('user_profiles').update(newStats).eq('display_name', sessionUser.name)
+        ? await supabase.from('user_profiles').update(newStats).eq('user_id', sessionUser.sessionId)
         : await supabase.from('user_profiles').insert({ ...newStats });
 
       if (error) throw error;
@@ -304,7 +304,7 @@ export const useRealTimeData = () => {
       const { data: existing, error: fetchError } = await supabase
         .from('user_profiles')
         .select('research_sessions')
-        .eq('display_name', sessionUser.name)
+        .eq('user_id', sessionUser.sessionId)
         .maybeSingle();
 
       if (fetchError && fetchError.code !== 'PGRST116') {
@@ -315,7 +315,7 @@ export const useRealTimeData = () => {
         const { error } = await supabase
           .from('user_profiles')
           .update({ research_sessions: (existing.research_sessions || 0) + 1 })
-          .eq('display_name', sessionUser.name);
+          .eq('user_id', sessionUser.sessionId);
 
         if (error) throw error;
       }
