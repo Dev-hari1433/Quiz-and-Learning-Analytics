@@ -148,10 +148,38 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      leaderboard_stats: {
+        Row: {
+          id: string | null
+          level: number | null
+          rank: number | null
+          research_sessions: number | null
+          streak: number | null
+          total_correct_answers: number | null
+          total_questions: number | null
+          total_quizzes: number | null
+          total_xp: number | null
+          user_name: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      get_leaderboard_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string | null
+          level: number | null
+          rank: number | null
+          research_sessions: number | null
+          streak: number | null
+          total_correct_answers: number | null
+          total_questions: number | null
+          total_quizzes: number | null
+          total_xp: number | null
+          user_name: string | null
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
