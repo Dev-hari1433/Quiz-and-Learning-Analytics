@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
 
 interface GeneratedQuestion {
   id: string;
@@ -106,34 +107,36 @@ export const QuizGenerator: React.FC<QuizGeneratorProps> = ({ onQuizGenerated })
         throw new Error('No content available for analysis. Please upload a file or enter text content.');
       }
 
-      // Call the quiz generation API
-      const supabaseUrl = 'https://hjepdnbfvrqmqbrsycml.supabase.co';
-      const response = await fetch(`${supabaseUrl}/functions/v1/quiz-generator`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqZXBkbmJmdnJxbXFicnN5Y21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxMzc5MDgsImV4cCI6MjA3MTcxMzkwOH0.ZAki01-M7zkIwJ5Gxr1BXSLMlh9NN5oS35cb7vOMpp4`
-        },
-        body: JSON.stringify({
+      // Call the quiz generation API using Supabase functions
+      const { data, error } = await supabase.functions.invoke('quiz-generator', {
+        body: {
           content: contentToAnalyze,
           topic: topic || 'General Knowledge',
           difficulty: difficulty,
           numQuestions: numQuestions[0]
-        }),
+        }
       });
 
-      if (!response.ok) {
+      if (error) {
+        console.error('Quiz generation error:', error);
+        
+        // Provide specific error messages based on error type
         let errorMessage = 'Failed to generate quiz questions';
-        try {
-          const error = await response.json();
-          errorMessage = error.error || errorMessage;
-        } catch {
-          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        
+        if (error.message) {
+          errorMessage = error.message;
+        } else if (error.status === 500) {
+          errorMessage = 'Server error: AI service unavailable. Please check your API keys.';
+        } else if (error.status === 401 || error.status === 403) {
+          errorMessage = 'Authentication failed: Invalid API key configuration.';
+        } else if (error.status === 429) {
+          errorMessage = 'Rate limit exceeded: Please wait a moment and try again.';
+        } else if (error.status === 400) {
+          errorMessage = 'Invalid request: Please check your content and try again.';
         }
+        
         throw new Error(errorMessage);
       }
-
-      const data = await response.json();
       
       // Update progress as questions are "generated"
       for (let i = 0; i <= 100; i += 10) {

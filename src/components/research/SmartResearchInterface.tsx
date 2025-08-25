@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { useRealTimeData } from '@/hooks/useRealTimeData';
 import { useSessionUser } from '@/hooks/useSessionUser';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SearchResult {
   title: string;
@@ -45,61 +46,63 @@ export const SmartResearchInterface: React.FC = () => {
   const { saveResearchActivity } = useRealTimeData();
 
   const searchWithGemini = async (query: string): Promise<SearchResult[]> => {
-    const supabaseUrl = 'https://hjepdnbfvrqmqbrsycml.supabase.co';
-    const response = await fetch(`${supabaseUrl}/functions/v1/gemini-search`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqZXBkbmJmdnJxbXFicnN5Y21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxMzc5MDgsImV4cCI6MjA3MTcxMzkwOH0.ZAki01-M7zkIwJ5Gxr1BXSLMlh9NN5oS35cb7vOMpp4`
-      },
-      body: JSON.stringify({ 
+    const { data, error } = await supabase.functions.invoke('gemini-search', {
+      body: { 
         query,
         type: 'search'
-      }),
+      }
     });
 
-    if (!response.ok) {
+    if (error) {
+      console.error('Search error:', error);
+      
+      // Provide specific error messages based on error type
       let errorMessage = 'Search failed';
-      try {
-        const error = await response.json();
-        errorMessage = error.error || errorMessage;
-      } catch {
-        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.status === 500) {
+        errorMessage = 'Server error: AI service unavailable. Please check your API keys.';
+      } else if (error.status === 401 || error.status === 403) {
+        errorMessage = 'Authentication failed: Invalid API key configuration.';
+      } else if (error.status === 429) {
+        errorMessage = 'Rate limit exceeded: Please wait a moment and try again.';
       }
+      
       throw new Error(errorMessage);
     }
 
-    const data = await response.json();
-    return data.results || [];
+    return data?.results || [];
   };
 
   const analyzeTextWithGemini = async (text: string): Promise<AnalysisResult | null> => {
-    const supabaseUrl = 'https://hjepdnbfvrqmqbrsycml.supabase.co';
-    const response = await fetch(`${supabaseUrl}/functions/v1/gemini-search`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqZXBkbmJmdnJxbXFicnN5Y21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxMzc5MDgsImV4cCI6MjA3MTcxMzkwOH0.ZAki01-M7zkIwJ5Gxr1BXSLMlh9NN5oS35cb7vOMpp4`
-      },
-      body: JSON.stringify({ 
+    const { data, error } = await supabase.functions.invoke('gemini-search', {
+      body: { 
         text,
         type: 'analyze'
-      }),
+      }
     });
 
-    if (!response.ok) {
+    if (error) {
+      console.error('Analysis error:', error);
+      
+      // Provide specific error messages based on error type
       let errorMessage = 'Analysis failed';
-      try {
-        const error = await response.json();
-        errorMessage = error.error || errorMessage;
-      } catch {
-        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.status === 500) {
+        errorMessage = 'Server error: AI service unavailable. Please check your API keys.';
+      } else if (error.status === 401 || error.status === 403) {
+        errorMessage = 'Authentication failed: Invalid API key configuration.';
+      } else if (error.status === 429) {
+        errorMessage = 'Rate limit exceeded: Please wait a moment and try again.';
       }
+      
       throw new Error(errorMessage);
     }
 
-    const data = await response.json();
-    return data.analysis || null;
+    return data?.analysis || null;
   };
 
   const handleSearch = async () => {
