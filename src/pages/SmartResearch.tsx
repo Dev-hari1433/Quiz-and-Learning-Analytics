@@ -2,8 +2,6 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Search, BookOpen, Globe, Lightbulb, Brain } from 'lucide-react';
 import { GeminiSearchInterface } from '@/components/research/GeminiSearchInterface';
-import { PerplexitySearchInterface } from '@/components/research/PerplexitySearchInterface';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const SmartResearch = () => {
   return (
@@ -27,26 +25,7 @@ const SmartResearch = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          <Tabs defaultValue="perplexity" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 gaming-card mb-6">
-              <TabsTrigger value="perplexity" className="flex items-center gap-2">
-                <Globe className="w-4 h-4" />
-                Perplexity AI
-              </TabsTrigger>
-              <TabsTrigger value="gemini" className="flex items-center gap-2">
-                <Brain className="w-4 h-4" />
-                Google Gemini
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="perplexity">
-              <PerplexitySearchInterface />
-            </TabsContent>
-
-            <TabsContent value="gemini">
-              <GeminiSearchInterface />
-            </TabsContent>
-          </Tabs>
+          <GeminiSearchInterface />
         </motion.div>
 
         {/* Features Overview */}
@@ -59,7 +38,7 @@ const SmartResearch = () => {
           <h2 className="text-2xl font-bold text-center mb-8">Research Features</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center space-y-4">
-              <Globe className="w-12 h-12 text-primary neon-glow mx-auto" />
+              <Brain className="w-12 h-12 text-primary neon-glow mx-auto" />
               <h3 className="text-lg font-semibold">AI Web Search</h3>
               <p className="text-muted-foreground text-sm">
                 Powered by Google Gemini AI for accurate, comprehensive information retrieval
