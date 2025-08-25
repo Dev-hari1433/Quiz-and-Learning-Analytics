@@ -32,18 +32,10 @@ export const GeminiSearchInterface: React.FC = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem('gemini_api_key') || '');
   const { toast } = useToast();
-
-  // Save API key to localStorage when it changes
-  const handleApiKeyChange = (key: string) => {
-    setApiKey(key);
-    if (key) {
-      localStorage.setItem('gemini_api_key', key);
-    } else {
-      localStorage.removeItem('gemini_api_key');
-    }
-  };
+  
+  // Get API key from environment
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
   // Initialize Gemini API
   const initializeGemini = async () => {
@@ -149,15 +141,6 @@ export const GeminiSearchInterface: React.FC = () => {
   };
 
   const handleSearch = async () => {
-    if (!apiKey) {
-      toast({
-        title: "API Key Required",
-        description: "Please enter your Gemini API key to use the search functionality.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     if (!searchQuery.trim()) {
       toast({
         title: "Search query required",
@@ -187,15 +170,6 @@ export const GeminiSearchInterface: React.FC = () => {
   };
 
   const handleAnalyze = async () => {
-    if (!apiKey) {
-      toast({
-        title: "API Key Required",
-        description: "Please enter your Gemini API key to use the analysis functionality.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     if (!textToAnalyze.trim()) {
       toast({
         title: "Text required",
@@ -226,73 +200,6 @@ export const GeminiSearchInterface: React.FC = () => {
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-6">
-      {/* API Key Setup */}
-      {!apiKey && (
-        <motion.div 
-          className="gaming-card p-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-primary" />
-            🔑 Gemini AI Setup
-          </h3>
-          <p className="text-muted-foreground mb-4">
-            Enter your Google Gemini API key to enable AI-powered search and text analysis features.
-          </p>
-          <div className="flex gap-4">
-            <Input
-              type="password"
-              placeholder="Enter your Gemini API key"
-              value={apiKey}
-              onChange={(e) => handleApiKeyChange(e.target.value)}
-              className="flex-1"
-            />
-            <Button 
-              onClick={() => {
-                if (apiKey) {
-                  toast({
-                    title: "API Key Saved",
-                    description: "You can now use Gemini AI features.",
-                  });
-                }
-              }}
-              disabled={!apiKey}
-              className="gaming-button-primary"
-            >
-              Save Key
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Get your API key from: <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Google AI Studio</a>
-          </p>
-        </motion.div>
-      )}
-
-      {/* Show current API key status */}
-      {apiKey && (
-        <motion.div 
-          className="gaming-card p-4 bg-accent/10 border-accent/20"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-accent rounded-full" />
-              <span className="text-sm font-medium">Gemini AI Connected</span>
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => handleApiKeyChange('')}
-              className="text-xs"
-            >
-              Change Key
-            </Button>
-          </div>
-        </motion.div>
-      )}
-
       <Tabs defaultValue="search" className="w-full">
         <TabsList className="grid w-full grid-cols-2 gaming-card">
           <TabsTrigger value="search" className="flex items-center gap-2">
@@ -320,7 +227,7 @@ export const GeminiSearchInterface: React.FC = () => {
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                   className="flex-1"
                 />
-                <Button onClick={handleSearch} disabled={isSearching || !apiKey} className="gaming-button-primary">
+                <Button onClick={handleSearch} disabled={isSearching} className="gaming-button-primary">
                   {isSearching ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
                   ) : (
@@ -385,7 +292,7 @@ export const GeminiSearchInterface: React.FC = () => {
                 onChange={(e) => setTextToAnalyze(e.target.value)}
                 className="min-h-[200px] resize-none"
               />
-              <Button onClick={handleAnalyze} disabled={isAnalyzing || !apiKey} className="gaming-button-primary">
+              <Button onClick={handleAnalyze} disabled={isAnalyzing} className="gaming-button-primary">
                 {isAnalyzing ? (
                   <div className="flex items-center gap-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
