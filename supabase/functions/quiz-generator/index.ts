@@ -75,33 +75,35 @@ serve(async (req) => {
       );
     }
 
-    // Create the prompt
-    const prompt = `Create exactly ${numQuestions} multiple choice questions based on this content:
+    // Create the prompt with explicit 4-option requirement
+    const prompt = `Generate exactly ${numQuestions} multiple choice questions based on this content:
 
 "${content}"
 
-Requirements:
-- Each question must have exactly 4 options (A, B, C, D)
-- Difficulty: ${difficulty}
-- Topic: ${topic || 'General'}
-- Questions should test understanding of the content
-- Return ONLY valid JSON in this exact format:
+CRITICAL REQUIREMENTS:
+1. Each question MUST have EXACTLY 4 options
+2. Label options as ["Option A", "Option B", "Option C", "Option D"] 
+3. Difficulty: ${difficulty}
+4. Topic: ${topic || 'General'}
+5. One option must be correct, three must be plausible distractors
+6. Return ONLY valid JSON, no extra text
 
+REQUIRED JSON FORMAT (no deviations allowed):
 {
   "questions": [
     {
       "id": "q1",
-      "question": "Question text?",
-      "options": ["Option A", "Option B", "Option C", "Option D"],
-      "correctAnswer": 0,
-      "explanation": "Why this is correct",
+      "question": "Your question text here?",
+      "options": ["First option", "Second option", "Third option", "Fourth option"],
+      "correctAnswer": 1,
+      "explanation": "Brief explanation of correct answer",
       "difficulty": "${difficulty}",
       "subject": "${topic || 'General'}"
     }
   ]
 }
 
-Do not include any text before or after the JSON.`;
+IMPORTANT: The "options" array must contain exactly 4 strings. The "correctAnswer" must be 0, 1, 2, or 3 (array index).`;
 
     console.log('Prompt length:', prompt.length);
 
