@@ -37,7 +37,7 @@ interface RealTimeStats {
 
 export const RealTimeDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { userStats, quizHistory, loading } = useRealTimeData();
+  const { userStats, quizHistory, loading, error } = useRealTimeData();
   const { sessionUser } = useSessionUser();
 
   if (loading && !userStats) {
@@ -46,6 +46,21 @@ export const RealTimeDashboard: React.FC = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="text-destructive text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold mb-4">Dashboard Error</h2>
+          <p className="text-muted-foreground mb-6">{error}</p>
+          <Button onClick={() => window.location.reload()} className="gaming-button-primary">
+            Refresh Page
+          </Button>
         </div>
       </div>
     );

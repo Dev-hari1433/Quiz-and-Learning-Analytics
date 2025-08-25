@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useSessionUser } from './useSessionUser';
+import { useToast } from '@/components/ui/use-toast';
 
 interface UserStats {
   id?: string;
@@ -43,21 +44,141 @@ interface ResearchActivity {
 
 export const useRealTimeData = () => {
   const { sessionUser } = useSessionUser();
+  const { toast } = useToast();
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [allUserStats, setAllUserStats] = useState<UserStats[]>([]);
   const [quizHistory, setQuizHistory] = useState<QuizSession[]>([]);
   const [researchHistory, setResearchHistory] = useState<ResearchActivity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Load initial data
+  // Load initial data and set up real-time subscriptions
   useEffect(() => {
+    let subscriptions: any[] = [];
+    
     if (sessionUser) {
-      loadUserData();
-      loadAllUsersData();
-      loadQuizHistory();
-      loadResearchHistory();
+      loadInitialData();
+      subscriptions = setupRealTimeSubscriptions();
     }
+
+    return () => {
+      // Cleanup subscriptions
+      subscriptions.forEach(subscription => {
+        supabase.removeChannel(subscription);
+      });
+    };
   }, [sessionUser]);
+
+  const loadInitialData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await Promise.all([
+        loadUserData(),
+        loadAllUsersData(),
+        loadQuizHistory(),
+        loadResearchHistory()
+      ]);
+    } catch (err) {
+      console.error('Error loading initial data:', err);
+      setError('Failed to load data. Please refresh the page.');
+      toast({
+        title: "Data Loading Error",
+        description: "Failed to load your data. Please refresh the page.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const setupRealTimeSubscriptions = () => {
+    const subscriptions = [];
+
+    // Subscribe to user profile changes
+    const profileSubscription = supabase
+      .channel('user_profiles_realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_profiles',
+          filter: `user_id=eq.${sessionUser.sessionId}`
+        },
+        () => {
+          console.log('Profile updated - refreshing user data');
+          loadUserData();
+          loadAllUsersData(); // Also refresh leaderboard
+        }
+      )
+      .subscribe();
+
+    // Subscribe to quiz session changes
+    const quizSubscription = supabase
+      .channel('quiz_sessions_realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'quiz_sessions',
+          filter: `user_id=eq.${sessionUser.sessionId}`
+        },
+        () => {
+          console.log('Quiz session updated - refreshing data');
+          loadQuizHistory();
+          loadUserData(); // Update stats
+          loadAllUsersData(); // Update leaderboard
+        }
+      )
+      .subscribe();
+
+    // Subscribe to research activity changes
+    const researchSubscription = supabase
+      .channel('research_activities_realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'research_activities',
+          filter: `user_id=eq.${sessionUser.sessionId}`
+        },
+        () => {
+          console.log('Research activity updated - refreshing data');
+          loadResearchHistory();
+          loadUserData(); // Update stats
+        }
+      )
+      .subscribe();
+
+    // Subscribe to global leaderboard changes
+    const leaderboardSubscription = supabase
+      .channel('leaderboard_realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_profiles'
+        },
+        () => {
+          console.log('Leaderboard updated - refreshing leaderboard data');
+          loadAllUsersData();
+        }
+      )
+      .subscribe();
+
+    subscriptions.push(
+      profileSubscription,
+      quizSubscription,
+      researchSubscription,
+      leaderboardSubscription
+    );
+
+    return subscriptions;
+  };
 
   const loadUserData = async () => {
     if (!sessionUser) return;
@@ -70,7 +191,8 @@ export const useRealTimeData = () => {
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
-        throw error;
+        console.error('Error loading user data:', error);
+        return;
       }
 
       if (data) {
@@ -94,6 +216,7 @@ export const useRealTimeData = () => {
       }
     } catch (error) {
       console.error('Error loading user data:', error);
+      setError('Failed to load user profile');
     }
   };
 
@@ -103,7 +226,8 @@ export const useRealTimeData = () => {
         .rpc('get_leaderboard_stats');
 
       if (error) {
-        throw error;
+        console.error('Error loading leaderboard:', error);
+        return;
       }
 
       const formattedData = (data || []).map(item => ({
@@ -125,8 +249,7 @@ export const useRealTimeData = () => {
       setAllUserStats(formattedData);
     } catch (error) {
       console.error('Error loading all users data:', error);
-    } finally {
-      setLoading(false);
+      setError('Failed to load leaderboard data');
     }
   };
 
@@ -366,13 +489,11 @@ export const useRealTimeData = () => {
     quizHistory,
     researchHistory,
     loading,
+    error,
     saveQuizResult,
     saveResearchActivity,
     refreshData: () => {
-      loadUserData();
-      loadAllUsersData();
-      loadQuizHistory();
-      loadResearchHistory();
+      loadInitialData();
     }
   };
 };

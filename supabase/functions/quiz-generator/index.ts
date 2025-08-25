@@ -312,7 +312,7 @@ Do not include any text before or after the JSON.`;
             "An outdated concept", 
             "Only theoretical information",
             "Contradictory information"
-          ],
+          ], // Always exactly 4 options
           correctAnswer: 0,
           explanation: "This represents a core concept from the provided content.",
           difficulty: difficulty,
@@ -336,18 +336,38 @@ Do not include any text before or after the JSON.`;
       );
     }
 
-    // Format and validate questions
+    // Format and validate questions - ALWAYS ensure exactly 4 options
     const finalQuestions = questionsData.questions.slice(0, numQuestions).map((q: any, index: number) => {
       const questionId = q.id || `q${index + 1}`;
       const questionText = q.question || `Question ${index + 1} about the content`;
-      const options = Array.isArray(q.options) && q.options.length === 4 
-        ? q.options 
-        : [
-            `Option A for question ${index + 1}`,
-            `Option B for question ${index + 1}`,
-            `Option C for question ${index + 1}`,
-            `Option D for question ${index + 1}`
-          ];
+      
+      // CRITICAL: Always ensure exactly 4 options
+      let options = [];
+      if (Array.isArray(q.options)) {
+        if (q.options.length === 4) {
+          options = q.options;
+        } else if (q.options.length > 4) {
+          // Take first 4 options
+          options = q.options.slice(0, 4);
+        } else {
+          // Pad with generic options to reach 4
+          options = [...q.options];
+          const labels = ['A', 'B', 'C', 'D'];
+          while (options.length < 4) {
+            options.push(`Option ${labels[options.length]} for question ${index + 1}`);
+          }
+        }
+      } else {
+        // Create 4 default options
+        options = [
+          `Option A for question ${index + 1}`,
+          `Option B for question ${index + 1}`,
+          `Option C for question ${index + 1}`,
+          `Option D for question ${index + 1}`
+        ];
+      }
+      
+      // Ensure correctAnswer is within bounds (0-3)
       const correctAnswer = typeof q.correctAnswer === 'number' && q.correctAnswer >= 0 && q.correctAnswer <= 3 
         ? q.correctAnswer 
         : 0;
@@ -356,7 +376,7 @@ Do not include any text before or after the JSON.`;
       return {
         id: questionId,
         question: questionText,
-        options,
+        options, // Always exactly 4 options
         correctAnswer,
         explanation,
         difficulty: difficulty,
