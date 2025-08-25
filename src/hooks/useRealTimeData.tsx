@@ -142,6 +142,28 @@ export const useRealTimeData = () => {
       )
       .subscribe();
 
+    // Subscribe to detailed quiz results for real-time analytics
+    const quizResultsSubscription = supabase
+      .channel('quiz_results_realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'quiz_results',
+          filter: `user_id=eq.${sessionUser.sessionId}`
+        },
+        (payload) => {
+          console.log('Quiz results updated - refreshing analytics data', payload.eventType);
+          // Refresh data for real-time analytics updates
+          Promise.all([
+            loadQuizHistory(),
+            loadUserData()
+          ]).catch(console.error);
+        }
+      )
+      .subscribe();
+
     // Subscribe to research activity changes
     const researchSubscription = supabase
       .channel('research_activities_realtime')
@@ -186,6 +208,7 @@ export const useRealTimeData = () => {
     subscriptions.push(
       profileSubscription,
       quizSubscription,
+      quizResultsSubscription,
       researchSubscription,
       leaderboardSubscription
     );
@@ -361,18 +384,20 @@ export const useRealTimeData = () => {
     }
   };
 
-  const saveQuizResult = async (quizData: Omit<QuizSession, 'id' | 'created_at'>) => {
-    if (!sessionUser) return;
+  const saveQuizResult = async (quizData: Omit<QuizSession, 'id' | 'created_at'>): Promise<string | null> => {
+    if (!sessionUser) return null;
 
     try {
-      // Save quiz session
-      const { error: quizError } = await supabase
+      // Save quiz session and return the ID
+      const { data, error: quizError } = await supabase
         .from('quiz_sessions')
         .insert({
           ...quizData,
           user_id: sessionUser.sessionId,
           user_name: sessionUser.name
-        });
+        })
+        .select('id')
+        .single();
 
       if (quizError) throw quizError;
 
@@ -381,8 +406,11 @@ export const useRealTimeData = () => {
       
       // Reload data
       await Promise.all([loadUserData(), loadAllUsersData(), loadQuizHistory()]);
+      
+      return data?.id || null;
     } catch (error) {
       console.error('Error saving quiz result:', error);
+      return null;
     }
   };
 

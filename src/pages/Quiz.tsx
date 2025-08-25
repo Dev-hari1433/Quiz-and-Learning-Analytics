@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { GameStateManager, QuizAnswer } from '@/lib/gameState';
 import { useRealTimeData } from '@/hooks/useRealTimeData';
 import { useSessionUser } from '@/hooks/useSessionUser';
+import { supabase } from '@/integrations/supabase/client';
 
 const Quiz = () => {
   const navigate = useNavigate();
@@ -125,11 +126,47 @@ const Quiz = () => {
             time_spent: Math.round((30 * questions.length) / 60), // Convert to minutes
             score: Math.round((finalScore / questions.length) * 100)
           };
-          await saveQuizResult(quizData);
+          
+          // Also save detailed question results to new quiz_results table
+          const quizSessionId = await saveQuizResult(quizData);
+          if (quizSessionId) {
+            await saveDetailedQuizResults(finalAnswers, quizSessionId);
+          }
         }
         setShowResults(true);
       }
     }, 2000);
+  };
+
+  const saveDetailedQuizResults = async (answers: QuizAnswer[], quizSessionId: string) => {
+    if (!sessionUser) return;
+    
+    try {
+      const detailedResults = answers.map(answer => ({
+        user_id: sessionUser.sessionId,
+        user_name: sessionUser.name,
+        quiz_session_id: quizSessionId,
+        question_id: answer.questionId,
+        question_text: answer.question,
+        options: answer.options,
+        selected_answer: answer.selectedAnswer,
+        correct_answer: answer.correctAnswer,
+        is_correct: answer.isCorrect,
+        time_spent: answer.timeSpent,
+        difficulty: 'medium',
+        subject: 'General Knowledge'
+      }));
+
+      const { error } = await supabase
+        .from('quiz_results')
+        .insert(detailedResults);
+
+      if (error) {
+        console.error('Error saving detailed quiz results:', error);
+      }
+    } catch (error) {
+      console.error('Error saving detailed quiz results:', error);
+    }
   };
 
   const resetQuiz = () => {

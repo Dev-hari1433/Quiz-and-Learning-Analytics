@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { GameStateManager } from '@/lib/gameState';
 import { supabase } from '@/integrations/supabase/client';
+import { ResearchTracker } from './ResearchTracker';
 
 interface SearchResult {
   title: string;
@@ -40,6 +41,8 @@ export const GeminiSearchInterface: React.FC = () => {
     timeSpent: 0,
     startTime: Date.now()
   });
+  const [lastSearchQuery, setLastSearchQuery] = useState('');
+  const [lastSearchTime, setLastSearchTime] = useState(0);
   const { toast } = useToast();
 
   const gameState = GameStateManager.getInstance();
@@ -153,6 +156,10 @@ export const GeminiSearchInterface: React.FC = () => {
       // Calculate XP based on search complexity and results
       const searchXP = Math.min(50, searchQuery.length * 2 + results.length);
       const timeSpent = Math.floor((Date.now() - searchStartTime) / 1000);
+      
+      // Track this search for analytics
+      setLastSearchQuery(searchQuery);
+      setLastSearchTime(timeSpent);
       
       // Add research activity to game state
       gameState.addStudyTime(Math.max(1, Math.floor(timeSpent / 60)));
@@ -448,6 +455,25 @@ export const GeminiSearchInterface: React.FC = () => {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Research Tracking Components */}
+      {lastSearchQuery && searchResults.length > 0 && (
+        <ResearchTracker
+          query={lastSearchQuery}
+          resultsCount={searchResults.length}
+          timeSpent={lastSearchTime * 1000}
+          activityType="search"
+        />
+      )}
+      
+      {analysisResult && textToAnalyze && (
+        <ResearchTracker
+          query={textToAnalyze.substring(0, 100)}
+          resultsCount={analysisResult.keyPoints.length}
+          timeSpent={sessionStats.timeSpent * 1000}
+          activityType="analyze"
+        />
+      )}
     </div>
   );
 };

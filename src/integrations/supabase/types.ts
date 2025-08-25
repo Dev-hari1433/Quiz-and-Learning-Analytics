@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      quiz_results: {
+        Row: {
+          correct_answer: number
+          created_at: string
+          difficulty: string
+          id: string
+          is_correct: boolean
+          options: string[]
+          question_id: string
+          question_text: string
+          quiz_session_id: string | null
+          selected_answer: number
+          subject: string
+          time_spent: number
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          correct_answer: number
+          created_at?: string
+          difficulty?: string
+          id?: string
+          is_correct?: boolean
+          options?: string[]
+          question_id: string
+          question_text: string
+          quiz_session_id?: string | null
+          selected_answer: number
+          subject?: string
+          time_spent?: number
+          user_id: string
+          user_name: string
+        }
+        Update: {
+          correct_answer?: number
+          created_at?: string
+          difficulty?: string
+          id?: string
+          is_correct?: boolean
+          options?: string[]
+          question_id?: string
+          question_text?: string
+          quiz_session_id?: string | null
+          selected_answer?: number
+          subject?: string
+          time_spent?: number
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: []
+      }
       quiz_sessions: {
         Row: {
           correct_answers: number
