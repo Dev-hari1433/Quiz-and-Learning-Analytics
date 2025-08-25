@@ -150,7 +150,7 @@ export const RealTimeDashboard: React.FC = () => {
             <h1 className="text-4xl font-bold mb-2">
               Welcome back, 
               <span className="gaming-button-secondary px-3 py-1 rounded-lg ml-3">
-                Alex Chen
+                Smart AI
               </span>
             </h1>
             <p className="text-muted-foreground text-lg">Ready to level up your learning?</p>
