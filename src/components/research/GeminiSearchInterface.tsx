@@ -35,10 +35,12 @@ export const GeminiSearchInterface: React.FC = () => {
   const { toast } = useToast();
   
   const searchWithGemini = async (query: string): Promise<SearchResult[]> => {
-    const response = await fetch('/functions/v1/gemini-search', {
+    const supabaseUrl = 'https://smpvvyisldlcbyobezkt.supabase.co';
+    const response = await fetch(`${supabaseUrl}/functions/v1/gemini-search`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtcHZ2eWlzbGRsY2J5b2Jlemt0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxMTUxNTcsImV4cCI6MjA3MTY5MTE1N30.npOw3xjMWuOerLWQ8Fv916Y4ebscShioNNKFYzhI7wo`
       },
       body: JSON.stringify({ 
         query,
@@ -47,19 +49,27 @@ export const GeminiSearchInterface: React.FC = () => {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Search failed');
+      let errorMessage = 'Search failed';
+      try {
+        const error = await response.json();
+        errorMessage = error.error || errorMessage;
+      } catch {
+        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
-    return data.results;
+    return data.results || [];
   };
 
   const analyzeTextWithGemini = async (text: string): Promise<AnalysisResult | null> => {
-    const response = await fetch('/functions/v1/gemini-search', {
+    const supabaseUrl = 'https://smpvvyisldlcbyobezkt.supabase.co';
+    const response = await fetch(`${supabaseUrl}/functions/v1/gemini-search`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtcHZ2eWlzbGRsY2J5b2Jlemt0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxMTUxNTcsImV4cCI6MjA3MTY5MTE1N30.npOw3xjMWuOerLWQ8Fv916Y4ebscShioNNKFYzhI7wo`
       },
       body: JSON.stringify({ 
         text,
@@ -68,12 +78,18 @@ export const GeminiSearchInterface: React.FC = () => {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Analysis failed');
+      let errorMessage = 'Analysis failed';
+      try {
+        const error = await response.json();
+        errorMessage = error.error || errorMessage;
+      } catch {
+        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
-    return data.analysis;
+    return data.analysis || null;
   };
 
   const handleSearch = async () => {
@@ -165,7 +181,7 @@ export const GeminiSearchInterface: React.FC = () => {
                 />
                 <Button onClick={handleSearch} disabled={isSearching} className="gaming-button-primary">
                   {isSearching ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
                   ) : (
                     <Search className="w-4 h-4" />
                   )}
@@ -203,8 +219,8 @@ export const GeminiSearchInterface: React.FC = () => {
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-muted-foreground text-sm leading-relaxed">
-                          {result.content.substring(0, 200)}...
+                        <p className="text-muted-foreground text-sm leading-relaxed line-clamp-3">
+                          {result.content.substring(0, 300)}...
                         </p>
                       </CardContent>
                     </Card>
@@ -231,7 +247,7 @@ export const GeminiSearchInterface: React.FC = () => {
               <Button onClick={handleAnalyze} disabled={isAnalyzing} className="gaming-button-primary">
                 {isAnalyzing ? (
                   <div className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
                     <span>Analyzing...</span>
                   </div>
                 ) : (

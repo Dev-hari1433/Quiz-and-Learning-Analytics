@@ -107,10 +107,12 @@ export const QuizGenerator: React.FC<QuizGeneratorProps> = ({ onQuizGenerated })
       }
 
       // Call the quiz generation API
-      const response = await fetch('/functions/v1/quiz-generator', {
+      const supabaseUrl = 'https://smpvvyisldlcbyobezkt.supabase.co';
+      const response = await fetch(`${supabaseUrl}/functions/v1/quiz-generator`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtcHZ2eWlzbGRsY2J5b2Jlemt0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxMTUxNTcsImV4cCI6MjA3MTY5MTE1N30.npOw3xjMWuOerLWQ8Fv916Y4ebscShioNNKFYzhI7wo`
         },
         body: JSON.stringify({
           content: contentToAnalyze,
@@ -121,8 +123,14 @@ export const QuizGenerator: React.FC<QuizGeneratorProps> = ({ onQuizGenerated })
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to generate quiz questions');
+        let errorMessage = 'Failed to generate quiz questions';
+        try {
+          const error = await response.json();
+          errorMessage = error.error || errorMessage;
+        } catch {
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
