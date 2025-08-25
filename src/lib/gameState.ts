@@ -41,7 +41,7 @@ class GameStateManager {
   private listeners: Array<(state: GameState) => void> = [];
 
   constructor() {
-    // Initialize with zero data instead of mock data
+    // Initialize with zero data - fresh start for all users
     this.state = {
       totalXP: 0,
       totalQuizzes: 0,
@@ -55,7 +55,7 @@ class GameStateManager {
       lastUpdated: new Date()
     };
     
-    // Load from localStorage if available
+    // Load from localStorage if available, but start fresh if no data
     this.loadState();
   }
 

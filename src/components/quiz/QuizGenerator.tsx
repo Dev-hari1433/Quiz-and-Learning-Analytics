@@ -28,7 +28,7 @@ export const QuizGenerator: React.FC<QuizGeneratorProps> = ({ onQuizGenerated })
   const [file, setFile] = useState<File | null>(null);
   const [textContent, setTextContent] = useState('');
   const [topic, setTopic] = useState('');
-  const [numQuestions, setNumQuestions] = useState([10]);
+  const [numQuestions, setNumQuestions] = useState([4]);
   const [difficulty, setDifficulty] = useState('medium');
   const [generatedQuestions, setGeneratedQuestions] = useState<GeneratedQuestion[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -88,68 +88,63 @@ export const QuizGenerator: React.FC<QuizGeneratorProps> = ({ onQuizGenerated })
     setStep('generating');
 
     try {
-      // Simulate AI question generation process
-      const questions: GeneratedQuestion[] = [];
-      const sampleQuestions = [
-        {
-          question: "What is the main topic discussed in the document?",
-          options: ["Technology", "Science", "History", "Literature"],
-          correctAnswer: 0,
-          explanation: "Based on the content analysis, the primary focus is on technology."
-        },
-        {
-          question: "According to the text, what is the most important factor?",
-          options: ["Time", "Quality", "Cost", "Efficiency"],
-          correctAnswer: 1,
-          explanation: "The document emphasizes quality as the critical factor for success."
-        },
-        {
-          question: "Which methodology is recommended in the document?",
-          options: ["Traditional approach", "Modern framework", "Hybrid model", "Custom solution"],
-          correctAnswer: 2,
-          explanation: "The text advocates for a hybrid model combining traditional and modern approaches."
-        },
-        {
-          question: "What is the key principle mentioned in the content?",
-          options: ["Simplicity", "Complexity", "Flexibility", "Rigidity"],
-          correctAnswer: 2,
-          explanation: "The content emphasizes flexibility as essential for adaptation and success."
+      // Prepare content for analysis
+      let contentToAnalyze = textContent;
+      
+      // If file was uploaded but no text content, extract basic info
+      if (file && !textContent.trim()) {
+        if (file.type === 'application/pdf') {
+          contentToAnalyze = `PDF document: ${file.name}. Please analyze this document and generate quiz questions based on typical content for this type of file.`;
+        } else if (file.type.includes('image')) {
+          contentToAnalyze = `Image document: ${file.name}. Please create quiz questions about image analysis, visual content understanding, or related topics.`;
+        } else {
+          contentToAnalyze = `Document: ${file.name}. Please generate educational quiz questions based on this document type.`;
         }
-      ];
-
-      // Generate the exact number of questions requested
-      for (let i = 0; i < numQuestions[0]; i++) {
-        const baseQuestion = sampleQuestions[i % sampleQuestions.length];
-        const question: GeneratedQuestion = {
-          id: `q${i + 1}`,
-          question: `${baseQuestion.question} (Question ${i + 1})`,
-          options: baseQuestion.options,
-          correctAnswer: baseQuestion.correctAnswer,
-          explanation: baseQuestion.explanation,
-          difficulty: difficulty as 'easy' | 'medium' | 'hard',
-          subject: topic || 'General Knowledge'
-        };
-        
-        questions.push(question);
-        
-        // Update progress
-        setProgress(((i + 1) / numQuestions[0]) * 100);
-        
-        // Add realistic delay
-        await new Promise(resolve => setTimeout(resolve, 200));
       }
 
-      setGeneratedQuestions(questions);
+      if (!contentToAnalyze.trim()) {
+        throw new Error('No content available for analysis. Please upload a file or enter text content.');
+      }
+
+      // Call the quiz generation API
+      const response = await fetch('/functions/v1/quiz-generator', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: contentToAnalyze,
+          topic: topic || 'General Knowledge',
+          difficulty: difficulty,
+          numQuestions: numQuestions[0]
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to generate quiz questions');
+      }
+
+      const data = await response.json();
+      
+      // Update progress as questions are "generated"
+      for (let i = 0; i <= 100; i += 10) {
+        setProgress(i);
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      setGeneratedQuestions(data.questions);
       setStep('preview');
       
       toast({
         title: "Quiz generated successfully!",
-        description: `Created ${numQuestions[0]} ${difficulty} questions from your content.`
+        description: `Created ${data.questions.length} ${difficulty} questions from your content.`
       });
     } catch (error) {
+      console.error('Quiz generation failed:', error);
       toast({
         title: "Generation failed",
-        description: "There was an error generating the quiz. Please try again.",
+        description: error instanceof Error ? error.message : "There was an error generating the quiz. Please try again.",
         variant: "destructive"
       });
       setStep('configure');
@@ -167,7 +162,7 @@ export const QuizGenerator: React.FC<QuizGeneratorProps> = ({ onQuizGenerated })
     setFile(null);
     setTextContent('');
     setTopic('');
-    setNumQuestions([10]);
+    setNumQuestions([4]);
     setDifficulty('medium');
     setGeneratedQuestions([]);
     setProgress(0);
@@ -446,17 +441,17 @@ export const QuizGenerator: React.FC<QuizGeneratorProps> = ({ onQuizGenerated })
                 <label className="text-sm font-medium">
                   Number of Questions: <span className="text-primary font-bold">{numQuestions[0]}</span>
                 </label>
-                <Slider
+                 <Slider
                   value={numQuestions}
                   onValueChange={setNumQuestions}
-                  max={20}
-                  min={5}
+                  max={10}
+                  min={4}
                   step={1}
                   className="w-full"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>5 questions</span>
-                  <span>20 questions</span>
+                  <span>4 questions</span>
+                  <span>10 questions</span>
                 </div>
               </div>
 
