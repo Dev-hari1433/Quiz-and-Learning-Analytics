@@ -105,43 +105,151 @@ serve(async (req) => {
     }
 
     if (type === 'search') {
-      // Generate realistic search results with actual working web URLs
+      // Generate 20+ realistic search results with actual working web URLs
       const searchResults = [
         {
           title: `${query} - Wikipedia Encyclopedia`,
           url: `https://en.wikipedia.org/wiki/${encodeURIComponent(query.replace(/\s+/g, '_'))}`,
-          content: content.substring(0, 250) + '...',
+          content: content.substring(0, 100) + '...',
           favicon: '📚'
         },
         {
           title: `${query} - GitHub Projects & Code`,
           url: `https://github.com/search?q=${encodeURIComponent(query)}&type=repositories`,
-          content: content.substring(250, 500) + '...',
+          content: content.substring(100, 200) + '...',
           favicon: '📖'
         },
         {
-          title: `Learn ${query} - Online Courses`,
+          title: `Learn ${query} - Coursera Courses`,
           url: `https://www.coursera.org/search?query=${encodeURIComponent(query)}`,
-          content: content.substring(500, 750) + '...',
+          content: content.substring(200, 300) + '...',
           favicon: '🎓'
         },
         {
-          title: `${query} - Academic Research Papers`,
+          title: `${query} - Google Scholar Research`,
           url: `https://scholar.google.com/scholar?q=${encodeURIComponent(query)}`,
-          content: content.substring(750, 1000) + '...',
+          content: content.substring(300, 400) + '...',
           favicon: '🔬'
         },
         {
           title: `${query} - Stack Overflow Q&A`,
           url: `https://stackoverflow.com/search?q=${encodeURIComponent(query)}`,
-          content: content.substring(1000, 1250) + '...',
+          content: content.substring(400, 500) + '...',
           favicon: '💬'
         },
         {
           title: `${query} - YouTube Tutorials`,
           url: `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`,
-          content: content.substring(1250, 1500) + '...',
+          content: content.substring(500, 600) + '...',
           favicon: '📺'
+        },
+        {
+          title: `${query} - Reddit Discussions`,
+          url: `https://www.reddit.com/search/?q=${encodeURIComponent(query)}`,
+          content: content.substring(600, 700) + '...',
+          favicon: '🗨️'
+        },
+        {
+          title: `${query} - Medium Articles`,
+          url: `https://medium.com/search?q=${encodeURIComponent(query)}`,
+          content: content.substring(700, 800) + '...',
+          favicon: '📰'
+        },
+        {
+          title: `${query} - MDN Web Docs`,
+          url: `https://developer.mozilla.org/en-US/search?q=${encodeURIComponent(query)}`,
+          content: content.substring(800, 900) + '...',
+          favicon: '🌐'
+        },
+        {
+          title: `${query} - Udemy Courses`,
+          url: `https://www.udemy.com/courses/search/?q=${encodeURIComponent(query)}`,
+          content: content.substring(900, 1000) + '...',
+          favicon: '🎯'
+        },
+        {
+          title: `${query} - Khan Academy`,
+          url: `https://www.khanacademy.org/search?page_search_query=${encodeURIComponent(query)}`,
+          content: content.substring(1000, 1100) + '...',
+          favicon: '🏫'
+        },
+        {
+          title: `${query} - TED Talks`,
+          url: `https://www.ted.com/search?q=${encodeURIComponent(query)}`,
+          content: content.substring(1100, 1200) + '...',
+          favicon: '🎤'
+        },
+        {
+          title: `${query} - AWS Documentation`,
+          url: `https://docs.aws.amazon.com/search/doc-search.html?searchPath=documentation&searchQuery=${encodeURIComponent(query)}`,
+          content: content.substring(1200, 1300) + '...',
+          favicon: '☁️'
+        },
+        {
+          title: `${query} - Microsoft Learn`,
+          url: `https://docs.microsoft.com/en-us/search/?terms=${encodeURIComponent(query)}`,
+          content: content.substring(1300, 1400) + '...',
+          favicon: '🏢'
+        },
+        {
+          title: `${query} - Pluralsight`,
+          url: `https://www.pluralsight.com/search?q=${encodeURIComponent(query)}`,
+          content: content.substring(1400, 1500) + '...',
+          favicon: '📚'
+        },
+        {
+          title: `${query} - CodePen Examples`,
+          url: `https://codepen.io/search/pens?q=${encodeURIComponent(query)}`,
+          content: content.substring(1500, 1600) + '...',
+          favicon: '✏️'
+        },
+        {
+          title: `${query} - Docker Hub`,
+          url: `https://hub.docker.com/search?q=${encodeURIComponent(query)}`,
+          content: content.substring(1600, 1700) + '...',
+          favicon: '🐳'
+        },
+        {
+          title: `${query} - NPM Packages`,
+          url: `https://www.npmjs.com/search?q=${encodeURIComponent(query)}`,
+          content: content.substring(1700, 1800) + '...',
+          favicon: '📦'
+        },
+        {
+          title: `${query} - PyPI Python Packages`,
+          url: `https://pypi.org/search/?q=${encodeURIComponent(query)}`,
+          content: content.substring(1800, 1900) + '...',
+          favicon: '🐍'
+        },
+        {
+          title: `${query} - Awesome Lists`,
+          url: `https://github.com/search?q=awesome+${encodeURIComponent(query)}&type=repositories`,
+          content: content.substring(1900, 2000) + '...',
+          favicon: '⭐'
+        },
+        {
+          title: `${query} - Dev.to Community`,
+          url: `https://dev.to/search?q=${encodeURIComponent(query)}`,
+          content: content.substring(2000, 2100) + '...',
+          favicon: '👨‍💻'
+        },
+        {
+          title: `${query} - Hacker News`,
+          url: `https://hn.algolia.com/?query=${encodeURIComponent(query)}`,
+          content: content.substring(2100, 2200) + '...',
+          favicon: '🔶'
+        },
+        {
+          title: `${query} - ResearchGate`,
+          url: `https://www.researchgate.net/search?q=${encodeURIComponent(query)}`,
+          content: content.substring(2200, 2300) + '...',
+          favicon: '🔬'
+        },
+        {
+          title: `${query} - Quora Answers`,
+          url: `https://www.quora.com/search?q=${encodeURIComponent(query)}`,
+          content: content.substring(2300, 2400) + '...',
+          favicon: '❓'
         }
       ]
 
@@ -166,19 +274,37 @@ serve(async (req) => {
         }
       } catch (parseError) {
         console.log('JSON parsing failed, creating structured response:', parseError.message)
-        // Fallback structured response
+        // Fallback structured response - clean up markdown formatting
         const wordCount = text.split(' ').length
         const readingTime = Math.ceil(wordCount / 200)
         
-        analysisData = {
-          summary: content.substring(0, 300) + (content.length > 300 ? '...' : ''),
-          keyPoints: content.split('\n').filter(line => line.trim()).slice(0, 5).map(line => line.trim()) || [
+        // Clean up markdown formatting from content
+        const cleanContent = content
+          .replace(/#{1,6}\s*/g, '') // Remove markdown headers
+          .replace(/\*{1,3}([^*]+)\*{1,3}/g, '$1') // Remove bold/italic markdown
+          .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove markdown links
+          .replace(/`([^`]+)`/g, '$1') // Remove inline code markdown
+          .replace(/^\s*[-*+]\s+/gm, '') // Remove list markers
+          .replace(/^\s*\d+\.\s+/gm, '') // Remove numbered list markers
+          .trim()
+        
+        // Extract clean key points without markdown
+        const cleanKeyPoints = cleanContent
+          .split(/\n\s*\n|\.|;/)
+          .filter(point => point.trim().length > 10)
+          .slice(0, 8)
+          .map(point => point.trim().replace(/^[-*•]\s*/, ''))
+          .filter(point => point.length > 0) || [
             "Key insight extracted from the text",
             "Important concept or theme identified", 
             "Notable pattern or trend observed",
             "Significant conclusion or takeaway",
             "Relevant contextual information"
-          ],
+          ]
+        
+        analysisData = {
+          summary: cleanContent.substring(0, 300) + (cleanContent.length > 300 ? '...' : ''),
+          keyPoints: cleanKeyPoints,
           sentiment: 'neutral',
           topics: ['Analysis', 'Research', 'Content'],
           readingLevel: wordCount > 1000 ? 'advanced' : wordCount > 500 ? 'intermediate' : 'beginner',

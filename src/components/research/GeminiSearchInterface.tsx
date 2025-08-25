@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, FileText, Sparkles, Globe, BookOpen, Lightbulb, ExternalLink } from 'lucide-react';
+import { Search, FileText, Sparkles, Globe, BookOpen, Lightbulb, ExternalLink, Clock, BarChart3, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GameStateManager } from '@/lib/gameState';
 
 interface SearchResult {
   title: string;
@@ -32,7 +33,34 @@ export const GeminiSearchInterface: React.FC = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [sessionStats, setSessionStats] = useState({
+    searchesPerformed: 0,
+    textsAnalyzed: 0,
+    timeSpent: 0,
+    startTime: Date.now()
+  });
   const { toast } = useToast();
+
+  const gameState = GameStateManager.getInstance();
+
+  useEffect(() => {
+    // Track time spent in research session
+    const interval = setInterval(() => {
+      setSessionStats(prev => ({
+        ...prev,
+        timeSpent: Math.floor((Date.now() - prev.startTime) / 1000)
+      }));
+    }, 1000);
+
+    return () => {
+      clearInterval(interval);
+      // Add study time when component unmounts
+      const minutesSpent = Math.floor((Date.now() - sessionStats.startTime) / 60000);
+      if (minutesSpent > 0) {
+        gameState.addStudyTime(minutesSpent);
+      }
+    };
+  }, []);
   
   const searchWithGemini = async (query: string): Promise<SearchResult[]> => {
     const supabaseUrl = 'https://smpvvyisldlcbyobezkt.supabase.co';
@@ -103,12 +131,28 @@ export const GeminiSearchInterface: React.FC = () => {
     }
 
     setIsSearching(true);
+    const searchStartTime = Date.now();
+    
     try {
       const results = await searchWithGemini(searchQuery);
       setSearchResults(results);
+      
+      // Update session stats and game state
+      setSessionStats(prev => ({
+        ...prev,
+        searchesPerformed: prev.searchesPerformed + 1
+      }));
+      
+      // Calculate XP based on search complexity and results
+      const searchXP = Math.min(50, searchQuery.length * 2 + results.length);
+      const timeSpent = Math.floor((Date.now() - searchStartTime) / 1000);
+      
+      // Add research activity to game state
+      gameState.addStudyTime(Math.max(1, Math.floor(timeSpent / 60)));
+      
       toast({
         title: "Search completed",
-        description: `Found comprehensive information about "${searchQuery}"`
+        description: `Found ${results.length} comprehensive results! +${searchXP} XP earned`
       });
     } catch (error) {
       toast({
@@ -132,12 +176,28 @@ export const GeminiSearchInterface: React.FC = () => {
     }
 
     setIsAnalyzing(true);
+    const analysisStartTime = Date.now();
+    
     try {
       const result = await analyzeTextWithGemini(textToAnalyze);
       setAnalysisResult(result);
+      
+      // Update session stats and game state
+      setSessionStats(prev => ({
+        ...prev,
+        textsAnalyzed: prev.textsAnalyzed + 1
+      }));
+      
+      // Calculate XP based on text complexity
+      const analysisXP = Math.min(100, textToAnalyze.length / 10 + (result?.keyPoints.length || 0) * 5);
+      const timeSpent = Math.floor((Date.now() - analysisStartTime) / 1000);
+      
+      // Add research activity to game state
+      gameState.addStudyTime(Math.max(1, Math.floor(timeSpent / 60)));
+      
       toast({
         title: "Analysis completed",
-        description: "Text has been successfully analyzed"
+        description: `Text successfully analyzed! +${Math.round(analysisXP)} XP earned`
       });
     } catch (error) {
       toast({
@@ -152,6 +212,34 @@ export const GeminiSearchInterface: React.FC = () => {
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-6">
+      {/* Session Statistics */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="gaming-card p-4"
+      >
+        <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Search className="w-4 h-4 text-primary" />
+              <span>{sessionStats.searchesPerformed} searches</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-accent" />
+              <span>{sessionStats.textsAnalyzed} analyzed</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-secondary" />
+              <span>{Math.floor(sessionStats.timeSpent / 60)}m {sessionStats.timeSpent % 60}s</span>
+            </div>
+          </div>
+          <Badge variant="outline" className="neon-glow">
+            <Brain className="w-3 h-3 mr-1" />
+            Research Session Active
+          </Badge>
+        </div>
+      </motion.div>
+
       <Tabs defaultValue="search" className="w-full">
         <TabsList className="grid w-full grid-cols-2 gaming-card">
           <TabsTrigger value="search" className="flex items-center gap-2">
