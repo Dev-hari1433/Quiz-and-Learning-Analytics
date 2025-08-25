@@ -127,7 +127,12 @@ export const QuizGenerator: React.FC<QuizGeneratorProps> = ({ onQuizGenerated })
           });
 
           if (error) throw error;
-          responseData = data;
+          
+          if (!data?.success) {
+            throw new Error(data?.error || 'Quiz generation failed');
+          }
+          
+          responseData = data.data;
           break;
         } catch (err: any) {
           lastErr = err;

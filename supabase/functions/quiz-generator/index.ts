@@ -3,7 +3,9 @@ import { GoogleGenerativeAI } from "npm:@google/generative-ai@^0.24.1"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': '*',
+  'Content-Type': 'application/json',
 }
 
 // Fallback to OpenRouter DeepSeek if Gemini fails
@@ -49,8 +51,28 @@ serve(async (req) => {
     const { content, topic, difficulty, numQuestions } = await req.json()
     console.log(`Generating ${numQuestions} quiz questions - Difficulty: ${difficulty}, Topic: ${topic}`)
 
+    // Check API keys first
+    const geminiKey = Deno.env.get('GEMINI_API_KEY')
+    const openRouterKey = Deno.env.get('OPENROUTER_API_KEY')
+    
+    if (!geminiKey && !openRouterKey) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'API keys not configured. Please add GEMINI_API_KEY or OPENROUTER_API_KEY to your Supabase secrets.' 
+        }),
+        { headers: corsHeaders, status: 500 }
+      )
+    }
+
     if (!content || content.trim().length < 50) {
-      throw new Error('Content is too short. Please provide at least 50 characters of meaningful content.')
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Content is too short. Please provide at least 50 characters of meaningful content.' 
+        }),
+        { headers: corsHeaders, status: 400 }
+      )
     }
 
     let generatedText = ''
@@ -93,14 +115,13 @@ IMPORTANT:
 - Ensure questions are appropriate for ${difficulty} difficulty level
 `
 
-    // Try Gemini first
+    // Try Gemini first if available
     try {
-      const apiKey = Deno.env.get('GEMINI_API_KEY')
-      if (!apiKey) {
+      if (!geminiKey) {
         throw new Error('Gemini API key not found')
       }
 
-      const genAI = new GoogleGenerativeAI(apiKey)
+      const genAI = new GoogleGenerativeAI(geminiKey)
       const model = genAI.getGenerativeModel({ model: 'gemini-pro' })
       
       const result = await model.generateContent(prompt)
@@ -177,23 +198,18 @@ IMPORTANT:
     console.log(`Successfully generated ${finalQuestions.length} questions`)
 
     return new Response(
-      JSON.stringify({ questions: finalQuestions }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      },
+      JSON.stringify({ success: true, data: { questions: finalQuestions } }),
+      { headers: corsHeaders, status: 200 }
     )
 
   } catch (error) {
     console.error('Quiz generation error:', error)
     return new Response(
       JSON.stringify({ 
+        success: false,
         error: error.message || 'Failed to generate quiz questions' 
       }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      },
+      { headers: corsHeaders, status: 500 }
     )
   }
 })

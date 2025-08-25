@@ -3,7 +3,9 @@ import { GoogleGenerativeAI } from "npm:@google/generative-ai@^0.24.1"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': '*',
+  'Content-Type': 'application/json',
 }
 
 // Fallback to OpenRouter DeepSeek if Gemini fails
@@ -49,16 +51,29 @@ serve(async (req) => {
     const { query, type, text } = await req.json()
     console.log(`Processing request - Type: ${type}, Query: ${query?.substring(0, 50)}...`)
 
+    // Check API keys first
+    const geminiKey = Deno.env.get('GEMINI_API_KEY')
+    const openRouterKey = Deno.env.get('OPENROUTER_API_KEY')
+    
+    if (!geminiKey && !openRouterKey) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'API keys not configured. Please add GEMINI_API_KEY or OPENROUTER_API_KEY to your Supabase secrets.' 
+        }),
+        { headers: corsHeaders, status: 500 }
+      )
+    }
+
     let content = ''
     
-    // Try Gemini first
+    // Try Gemini first if available
     try {
-      const apiKey = Deno.env.get('GEMINI_API_KEY')
-      if (!apiKey) {
+      if (!geminiKey) {
         throw new Error('Gemini API key not found')
       }
 
-      const genAI = new GoogleGenerativeAI(apiKey)
+      const genAI = new GoogleGenerativeAI(geminiKey)
       const model = genAI.getGenerativeModel({ model: 'gemini-pro' })
 
       if (type === 'search') {
@@ -254,11 +269,8 @@ serve(async (req) => {
       ]
 
       return new Response(
-        JSON.stringify({ results: searchResults }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200,
-        },
+        JSON.stringify({ success: true, data: { results: searchResults } }),
+        { headers: corsHeaders, status: 200 }
       )
     }
 
@@ -323,32 +335,24 @@ serve(async (req) => {
       }
 
       return new Response(
-        JSON.stringify({ analysis: finalResult }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200,
-        },
+        JSON.stringify({ success: true, data: { analysis: finalResult } }),
+        { headers: corsHeaders, status: 200 }
       )
     }
 
     return new Response(
-      JSON.stringify({ error: 'Invalid request type. Use "search" or "analyze".' }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
-      },
+      JSON.stringify({ success: false, error: 'Invalid request type. Use "search" or "analyze".' }),
+      { headers: corsHeaders, status: 400 }
     )
 
   } catch (error) {
     console.error('Edge function error:', error)
     return new Response(
       JSON.stringify({ 
+        success: false,
         error: error.message || 'An error occurred while processing your request' 
       }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      },
+      { headers: corsHeaders, status: 500 }
     )
   }
 })

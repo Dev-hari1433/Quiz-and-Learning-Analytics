@@ -88,7 +88,12 @@ export const GeminiSearchInterface: React.FC = () => {
     }
 
     console.log('[GeminiSearchInterface] gemini-search data:', data);
-    return data?.results || [];
+    
+    if (!data?.success) {
+      throw new Error(data?.error || 'Search request failed');
+    }
+    
+    return data?.data?.results || [];
   };
 
   const analyzeTextWithGemini = async (text: string): Promise<AnalysisResult | null> => {
@@ -114,7 +119,12 @@ export const GeminiSearchInterface: React.FC = () => {
     }
 
     console.log('[GeminiSearchInterface] gemini analyze data:', data);
-    return data?.analysis || null;
+    
+    if (!data?.success) {
+      throw new Error(data?.error || 'Analysis request failed');
+    }
+    
+    return data?.data?.analysis || null;
   };
 
   const handleSearch = async () => {
