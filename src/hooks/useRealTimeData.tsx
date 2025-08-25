@@ -100,9 +100,7 @@ export const useRealTimeData = () => {
   const loadAllUsersData = async () => {
     try {
       const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .order('total_xp', { ascending: false });
+        .rpc('get_leaderboard_stats');
 
       if (error) {
         throw error;
@@ -110,18 +108,18 @@ export const useRealTimeData = () => {
 
       const formattedData = (data || []).map(item => ({
         id: item.id,
-        user_name: (item as any).user_name || item.display_name || '',
+        user_name: item.user_name || '',
         total_xp: item.total_xp || 0,
         total_quizzes: item.total_quizzes || 0,
         total_correct_answers: item.total_correct_answers || 0,
         total_questions: item.total_questions || 0,
-        study_time: item.study_time || 0,
+        study_time: 0, // Not exposed in leaderboard view for privacy
         streak: item.streak || 0,
         level: item.level || 1,
         research_sessions: item.research_sessions || 0,
-        achievements: item.achievements || [],
-        last_activity: (item as any).last_activity,
-        created_at: item.created_at
+        achievements: [], // Not exposed in leaderboard view for privacy
+        last_activity: undefined, // Not exposed in leaderboard view for privacy
+        created_at: undefined // Not exposed in leaderboard view for privacy
       }));
 
       setAllUserStats(formattedData);
