@@ -105,38 +105,43 @@ serve(async (req) => {
     }
 
     if (type === 'search') {
-      // Generate realistic search results with actual web URLs
-      const querySlug = query.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '')
+      // Generate realistic search results with actual working web URLs
       const searchResults = [
         {
-          title: `${query} - Complete Guide and Tutorial`,
-          url: `https://en.wikipedia.org/wiki/${query.replace(/\s+/g, '_')}`,
-          content: content.substring(0, 300) + '...',
+          title: `${query} - Wikipedia Encyclopedia`,
+          url: `https://en.wikipedia.org/wiki/${encodeURIComponent(query.replace(/\s+/g, '_'))}`,
+          content: content.substring(0, 250) + '...',
           favicon: '📚'
         },
         {
-          title: `${query} Documentation and Resources`,
-          url: `https://github.com/search?q=${encodeURIComponent(query)}`,
-          content: content.substring(300, 600) + '...',
+          title: `${query} - GitHub Projects & Code`,
+          url: `https://github.com/search?q=${encodeURIComponent(query)}&type=repositories`,
+          content: content.substring(250, 500) + '...',
           favicon: '📖'
         },
         {
-          title: `Learn ${query} - Tutorials and Examples`,
+          title: `Learn ${query} - Online Courses`,
           url: `https://www.coursera.org/search?query=${encodeURIComponent(query)}`,
-          content: content.substring(600, 900) + '...',
+          content: content.substring(500, 750) + '...',
           favicon: '🎓'
         },
         {
-          title: `${query} - Latest Research and Articles`,
+          title: `${query} - Academic Research Papers`,
           url: `https://scholar.google.com/scholar?q=${encodeURIComponent(query)}`,
-          content: content.substring(900, 1200) + '...',
+          content: content.substring(750, 1000) + '...',
           favicon: '🔬'
         },
         {
-          title: `${query} - Community Discussion and Q&A`,
+          title: `${query} - Stack Overflow Q&A`,
           url: `https://stackoverflow.com/search?q=${encodeURIComponent(query)}`,
-          content: content.substring(1200, 1500) + '...',
+          content: content.substring(1000, 1250) + '...',
           favicon: '💬'
+        },
+        {
+          title: `${query} - YouTube Tutorials`,
+          url: `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`,
+          content: content.substring(1250, 1500) + '...',
+          favicon: '📺'
         }
       ]
 
