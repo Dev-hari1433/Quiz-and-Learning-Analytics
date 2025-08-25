@@ -7,6 +7,8 @@ import { QuizReview } from '@/components/quiz/QuizReview';
 import { XPBar } from '@/components/gaming/XPBar';
 import { useNavigate } from 'react-router-dom';
 import { GameStateManager, QuizAnswer } from '@/lib/gameState';
+import { useRealTimeData } from '@/hooks/useRealTimeData';
+import { useSessionUser } from '@/hooks/useSessionUser';
 
 const Quiz = () => {
   const navigate = useNavigate();
@@ -16,6 +18,8 @@ const Quiz = () => {
   const [showReview, setShowReview] = useState(false);
   const [quizAnswers, setQuizAnswers] = useState<QuizAnswer[]>([]);
   const [gameState, setGameState] = useState(GameStateManager.getInstance().getState());
+  const { saveQuizResult } = useRealTimeData();
+  const { sessionUser } = useSessionUser();
 
   useEffect(() => {
     const unsubscribe = GameStateManager.getInstance().subscribe(setGameState);
@@ -70,7 +74,7 @@ const Quiz = () => {
     ];
   });
 
-  const handleAnswer = (isCorrect: boolean, selectedOption: number) => {
+  const handleAnswer = async (isCorrect: boolean, selectedOption: number) => {
     const currentQ = questions[currentQuestion];
     
     // Store the answer for review
@@ -90,21 +94,39 @@ const Quiz = () => {
       setScore(score + 1);
     }
 
-    setTimeout(() => {
+    setTimeout(async () => {
       if (currentQuestion < questions.length - 1) {
         setCurrentQuestion(currentQuestion + 1);
       } else {
+        const finalScore = score + (isCorrect ? 1 : 0);
+        const finalAnswers = [...quizAnswers, answer];
+        
         // Save quiz results to game state
         GameStateManager.getInstance().addQuizResult({
           title: 'Practice Quiz',
-          score: Math.round(((score + (isCorrect ? 1 : 0)) / questions.length) * 100),
+          score: Math.round((finalScore / questions.length) * 100),
           totalQuestions: questions.length,
-          correctAnswers: score + (isCorrect ? 1 : 0),
+          correctAnswers: finalScore,
           timeSpent: 30 * questions.length / 60, // Convert to minutes
           subject: 'General Knowledge',
           difficulty: 'medium',
-          answers: [...quizAnswers, answer]
+          answers: finalAnswers
         });
+
+        // Save to Supabase if user is logged in
+        if (sessionUser) {
+          const quizData = {
+            user_name: sessionUser.name,
+            title: 'Practice Quiz',
+            subject: 'General Knowledge',
+            difficulty: 'medium',
+            total_questions: questions.length,
+            correct_answers: finalScore,
+            time_spent: Math.round((30 * questions.length) / 60), // Convert to minutes
+            score: Math.round((finalScore / questions.length) * 100)
+          };
+          await saveQuizResult(quizData);
+        }
         setShowResults(true);
       }
     }, 2000);

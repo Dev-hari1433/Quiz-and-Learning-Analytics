@@ -107,12 +107,12 @@ export const QuizGenerator: React.FC<QuizGeneratorProps> = ({ onQuizGenerated })
       }
 
       // Call the quiz generation API
-      const supabaseUrl = 'https://smpvvyisldlcbyobezkt.supabase.co';
+      const supabaseUrl = 'https://hjepdnbfvrqmqbrsycml.supabase.co';
       const response = await fetch(`${supabaseUrl}/functions/v1/quiz-generator`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtcHZ2eWlzbGRsY2J5b2Jlemt0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxMTUxNTcsImV4cCI6MjA3MTY5MTE1N30.npOw3xjMWuOerLWQ8Fv916Y4ebscShioNNKFYzhI7wo`
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqZXBkbmJmdnJxbXFicnN5Y21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxMzc5MDgsImV4cCI6MjA3MTcxMzkwOH0.ZAki01-M7zkIwJ5Gxr1BXSLMlh9NN5oS35cb7vOMpp4`
         },
         body: JSON.stringify({
           content: contentToAnalyze,
