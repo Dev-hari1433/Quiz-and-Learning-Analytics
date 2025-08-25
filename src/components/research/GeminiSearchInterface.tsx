@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { GameStateManager } from '@/lib/gameState';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SearchResult {
   title: string;
@@ -63,61 +64,57 @@ export const GeminiSearchInterface: React.FC = () => {
   }, []);
   
   const searchWithGemini = async (query: string): Promise<SearchResult[]> => {
-    const supabaseUrl = 'https://hjepdnbfvrqmqbrsycml.supabase.co';
-    const response = await fetch(`${supabaseUrl}/functions/v1/gemini-search`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqZXBkbmJmdnJxbXFicnN5Y21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxMzc5MDgsImV4cCI6MjA3MTcxMzkwOH0.ZAki01-M7zkIwJ5Gxr1BXSLMlh9NN5oS35cb7vOMpp4`
-      },
-      body: JSON.stringify({ 
-        query,
-        type: 'search'
-      }),
+    console.log('[GeminiSearchInterface] invoking gemini-search with query:', query);
+    // Use official SDK to avoid CORS/preflight pitfalls
+    const { data, error } = await supabase.functions.invoke('gemini-search', {
+      body: { query, type: 'search' },
     });
 
-    if (!response.ok) {
+    if (error) {
+      console.error('[GeminiSearchInterface] gemini-search error:', error);
+      // Normalize Supabase error into a readable message
+      const transient =
+        (error as any)?.name === 'FunctionsFetchError' ||
+        (error as any)?.message?.toLowerCase?.().includes('failed to fetch') ||
+        (error as any)?.status === 502 || (error as any)?.status === 503 || (error as any)?.status === 504;
+
       let errorMessage = 'Search failed';
-      try {
-        const error = await response.json();
-        errorMessage = error.error || errorMessage;
-      } catch {
-        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-      }
+      if ((error as any)?.message) errorMessage = (error as any).message;
+      else if ((error as any)?.status === 500) errorMessage = 'Server error: AI service unavailable. Please check API keys.';
+      else if ((error as any)?.status === 401 || (error as any)?.status === 403) errorMessage = 'Authentication failed: Invalid API key configuration.';
+      else if ((error as any)?.status === 429) errorMessage = 'Rate limit exceeded: Please wait and try again.';
+      else if (transient) errorMessage = 'Network error: Could not reach AI service.';
       throw new Error(errorMessage);
     }
 
-    const data = await response.json();
-    return data.results || [];
+    console.log('[GeminiSearchInterface] gemini-search data:', data);
+    return data?.results || [];
   };
 
   const analyzeTextWithGemini = async (text: string): Promise<AnalysisResult | null> => {
-    const supabaseUrl = 'https://hjepdnbfvrqmqbrsycml.supabase.co';
-    const response = await fetch(`${supabaseUrl}/functions/v1/gemini-search`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqZXBkbmJmdnJxbXFicnN5Y21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxMzc5MDgsImV4cCI6MjA3MTcxMzkwOH0.ZAki01-M7zkIwJ5Gxr1BXSLMlh9NN5oS35cb7vOMpp4`
-      },
-      body: JSON.stringify({ 
-        text,
-        type: 'analyze'
-      }),
+    console.log('[GeminiSearchInterface] invoking gemini-search analyze with text length:', text.length);
+    const { data, error } = await supabase.functions.invoke('gemini-search', {
+      body: { text, type: 'analyze' },
     });
 
-    if (!response.ok) {
+    if (error) {
+      console.error('[GeminiSearchInterface] gemini analyze error:', error);
+      const transient =
+        (error as any)?.name === 'FunctionsFetchError' ||
+        (error as any)?.message?.toLowerCase?.().includes('failed to fetch') ||
+        (error as any)?.status === 502 || (error as any)?.status === 503 || (error as any)?.status === 504;
+
       let errorMessage = 'Analysis failed';
-      try {
-        const error = await response.json();
-        errorMessage = error.error || errorMessage;
-      } catch {
-        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-      }
+      if ((error as any)?.message) errorMessage = (error as any).message;
+      else if ((error as any)?.status === 500) errorMessage = 'Server error: AI service unavailable. Please check API keys.';
+      else if ((error as any)?.status === 401 || (error as any)?.status === 403) errorMessage = 'Authentication failed: Invalid API key configuration.';
+      else if ((error as any)?.status === 429) errorMessage = 'Rate limit exceeded: Please wait and try again.';
+      else if (transient) errorMessage = 'Network error: Could not reach AI service.';
       throw new Error(errorMessage);
     }
 
-    const data = await response.json();
-    return data.analysis || null;
+    console.log('[GeminiSearchInterface] gemini analyze data:', data);
+    return data?.analysis || null;
   };
 
   const handleSearch = async () => {
