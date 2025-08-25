@@ -9,6 +9,8 @@ import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
+import { useRealTimeData } from '@/hooks/useRealTimeData';
+import { useSessionUser } from '@/hooks/useSessionUser';
 
 interface GeneratedQuestion {
   id: string;
@@ -35,6 +37,8 @@ export const QuizGenerator: React.FC<QuizGeneratorProps> = ({ onQuizGenerated })
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
   const { toast } = useToast();
+  const { saveResearchActivity } = useRealTimeData();
+  const { sessionUser } = useSessionUser();
 
   const handleFileUpload = (uploadedFile: File) => {
     const allowedTypes = [
@@ -87,6 +91,7 @@ export const QuizGenerator: React.FC<QuizGeneratorProps> = ({ onQuizGenerated })
     setIsGenerating(true);
     setProgress(0);
     setStep('generating');
+    const generationStartTime = Date.now();
 
     try {
       // Prepare content for analysis
@@ -107,34 +112,47 @@ export const QuizGenerator: React.FC<QuizGeneratorProps> = ({ onQuizGenerated })
         throw new Error('No content available for analysis. Please upload a file or enter text content.');
       }
 
-      // Call the quiz generation API using Supabase functions
-      const { data, error } = await supabase.functions.invoke('quiz-generator', {
-        body: {
-          content: contentToAnalyze,
-          topic: topic || 'General Knowledge',
-          difficulty: difficulty,
-          numQuestions: numQuestions[0]
-        }
-      });
+      // Call the quiz generation API using Supabase functions with retry
+      let responseData: any = null;
+      let lastErr: any = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const { data, error } = await supabase.functions.invoke('quiz-generator', {
+            body: {
+              content: contentToAnalyze,
+              topic: topic || 'General Knowledge',
+              difficulty: difficulty,
+              numQuestions: numQuestions[0]
+            }
+          });
 
-      if (error) {
-        console.error('Quiz generation error:', error);
-        
-        // Provide specific error messages based on error type
-        let errorMessage = 'Failed to generate quiz questions';
-        
-        if (error.message) {
-          errorMessage = error.message;
-        } else if (error.status === 500) {
-          errorMessage = 'Server error: AI service unavailable. Please check your API keys.';
-        } else if (error.status === 401 || error.status === 403) {
-          errorMessage = 'Authentication failed: Invalid API key configuration.';
-        } else if (error.status === 429) {
-          errorMessage = 'Rate limit exceeded: Please wait a moment and try again.';
-        } else if (error.status === 400) {
-          errorMessage = 'Invalid request: Please check your content and try again.';
+          if (error) throw error;
+          responseData = data;
+          break;
+        } catch (err: any) {
+          lastErr = err;
+          const transient =
+            err?.name === 'FunctionsFetchError' ||
+            err?.message?.toLowerCase?.().includes('failed to fetch') ||
+            err?.status === 502 || err?.status === 503 || err?.status === 504;
+          if (transient && attempt < 2) {
+            await new Promise(r => setTimeout(r, 400 * Math.pow(2, attempt)));
+            continue;
+          }
+          // Non-transient, break and handle below
+          break;
         }
-        
+      }
+
+      if (!responseData) {
+        const error = lastErr;
+        console.error('Quiz generation error:', error);
+        let errorMessage = 'Failed to generate quiz questions';
+        if (error?.message) errorMessage = error.message;
+        else if (error?.status === 500) errorMessage = 'Server error: AI service unavailable. Please check your API keys.';
+        else if (error?.status === 401 || error?.status === 403) errorMessage = 'Authentication failed: Invalid API key configuration.';
+        else if (error?.status === 429) errorMessage = 'Rate limit exceeded: Please wait a moment and try again.';
+        else if (error?.name === 'FunctionsFetchError') errorMessage = 'Network error: Could not reach AI service.';
         throw new Error(errorMessage);
       }
       
@@ -144,12 +162,28 @@ export const QuizGenerator: React.FC<QuizGeneratorProps> = ({ onQuizGenerated })
         await new Promise(resolve => setTimeout(resolve, 100));
       }
 
-      setGeneratedQuestions(data.questions);
+      setGeneratedQuestions(responseData.questions);
       setStep('preview');
+
+      // Log generation activity to Supabase to reflect in history/analytics
+      if (sessionUser) {
+        const timeSpent = Math.floor((Date.now() - generationStartTime) / 1000);
+        try {
+          await saveResearchActivity({
+            user_name: sessionUser.name,
+            activity_type: 'quiz_generated',
+            query_text: topic ? `Quiz on ${topic}` : (file ? `Quiz from ${file.name}` : 'Quiz from text'),
+            time_spent: timeSpent,
+            results_count: responseData.questions?.length || 0
+          });
+        } catch (e) {
+          console.warn('Failed to log quiz generation activity:', e);
+        }
+      }
       
       toast({
         title: "Quiz generated successfully!",
-        description: `Created ${data.questions.length} ${difficulty} questions from your content.`
+        description: `Created ${responseData.questions.length} ${difficulty} questions from your content.`
       });
     } catch (error) {
       console.error('Quiz generation failed:', error);

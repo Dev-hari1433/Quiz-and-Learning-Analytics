@@ -46,63 +46,86 @@ export const SmartResearchInterface: React.FC = () => {
   const { saveResearchActivity } = useRealTimeData();
 
   const searchWithGemini = async (query: string): Promise<SearchResult[]> => {
-    const { data, error } = await supabase.functions.invoke('gemini-search', {
-      body: { 
-        query,
-        type: 'search'
-      }
-    });
+    // Retry up to 3 times on transient network/edge errors
+    let lastErr: any = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const { data, error } = await supabase.functions.invoke('gemini-search', {
+          body: { 
+            query,
+            type: 'search'
+          }
+        });
 
-    if (error) {
-      console.error('Search error:', error);
-      
-      // Provide specific error messages based on error type
-      let errorMessage = 'Search failed';
-      
-      if (error.message) {
-        errorMessage = error.message;
-      } else if (error.status === 500) {
-        errorMessage = 'Server error: AI service unavailable. Please check your API keys.';
-      } else if (error.status === 401 || error.status === 403) {
-        errorMessage = 'Authentication failed: Invalid API key configuration.';
-      } else if (error.status === 429) {
-        errorMessage = 'Rate limit exceeded: Please wait a moment and try again.';
+        if (error) {
+          throw error;
+        }
+
+        return data?.results || [];
+      } catch (error: any) {
+        lastErr = error;
+        const transient =
+          error?.name === 'FunctionsFetchError' ||
+          error?.message?.toLowerCase?.().includes('failed to fetch') ||
+          error?.status === 502 || error?.status === 503 || error?.status === 504;
+        if (transient && attempt < 2) {
+          // Exponential backoff
+          await new Promise(r => setTimeout(r, 400 * Math.pow(2, attempt)));
+          continue;
+        }
+
+        // Provide specific error messages based on error type
+        let errorMessage = 'Search failed';
+        if (error?.message) errorMessage = error.message;
+        else if (error?.status === 500) errorMessage = 'Server error: AI service unavailable. Please check your API keys.';
+        else if (error?.status === 401 || error?.status === 403) errorMessage = 'Authentication failed: Invalid API key configuration.';
+        else if (error?.status === 429) errorMessage = 'Rate limit exceeded: Please wait a moment and try again.';
+        else if (transient) errorMessage = 'Network error: Could not reach AI service. Retrying failed.';
+        throw new Error(errorMessage);
       }
-      
-      throw new Error(errorMessage);
     }
-
-    return data?.results || [];
+    throw lastErr || new Error('Unknown error');
   };
 
   const analyzeTextWithGemini = async (text: string): Promise<AnalysisResult | null> => {
-    const { data, error } = await supabase.functions.invoke('gemini-search', {
-      body: { 
-        text,
-        type: 'analyze'
-      }
-    });
+    // Retry up to 3 times on transient network/edge errors
+    let lastErr: any = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const { data, error } = await supabase.functions.invoke('gemini-search', {
+          body: { 
+            text,
+            type: 'analyze'
+          }
+        });
 
-    if (error) {
-      console.error('Analysis error:', error);
-      
-      // Provide specific error messages based on error type
-      let errorMessage = 'Analysis failed';
-      
-      if (error.message) {
-        errorMessage = error.message;
-      } else if (error.status === 500) {
-        errorMessage = 'Server error: AI service unavailable. Please check your API keys.';
-      } else if (error.status === 401 || error.status === 403) {
-        errorMessage = 'Authentication failed: Invalid API key configuration.';
-      } else if (error.status === 429) {
-        errorMessage = 'Rate limit exceeded: Please wait a moment and try again.';
+        if (error) {
+          throw error;
+        }
+
+        return data?.analysis || null;
+      } catch (error: any) {
+        lastErr = error;
+        const transient =
+          error?.name === 'FunctionsFetchError' ||
+          error?.message?.toLowerCase?.().includes('failed to fetch') ||
+          error?.status === 502 || error?.status === 503 || error?.status === 504;
+        if (transient && attempt < 2) {
+          await new Promise(r => setTimeout(r, 400 * Math.pow(2, attempt)));
+          continue;
+        }
+
+        // Provide specific error messages based on error type
+        let errorMessage = 'Analysis failed';
+        if (error?.message) errorMessage = error.message;
+        else if (error?.status === 500) errorMessage = 'Server error: AI service unavailable. Please check your API keys.';
+        else if (error?.status === 401 || error?.status === 403) errorMessage = 'Authentication failed: Invalid API key configuration.';
+        else if (error?.status === 429) errorMessage = 'Rate limit exceeded: Please wait a moment and try again.';
+        else if (transient) errorMessage = 'Network error: Could not reach AI service. Retrying failed.';
+        throw new Error(errorMessage);
       }
-      
-      throw new Error(errorMessage);
     }
-
-    return data?.analysis || null;
+    throw lastErr || new Error('Unknown error');
   };
 
   const handleSearch = async () => {
