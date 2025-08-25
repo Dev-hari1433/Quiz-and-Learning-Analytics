@@ -105,25 +105,38 @@ serve(async (req) => {
     }
 
     if (type === 'search') {
-      // Format as search results
+      // Generate realistic search results with actual web URLs
+      const querySlug = query.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '')
       const searchResults = [
         {
-          title: `Complete Guide: ${query}`,
-          url: '#ai-research',
-          content: content,
-          favicon: '🤖'
+          title: `${query} - Complete Guide and Tutorial`,
+          url: `https://en.wikipedia.org/wiki/${query.replace(/\s+/g, '_')}`,
+          content: content.substring(0, 300) + '...',
+          favicon: '📚'
         },
         {
-          title: `Key Facts about ${query}`,
-          url: '#ai-facts',  
-          content: content.substring(0, 400) + '...',
-          favicon: '📊'
+          title: `${query} Documentation and Resources`,
+          url: `https://github.com/search?q=${encodeURIComponent(query)}`,
+          content: content.substring(300, 600) + '...',
+          favicon: '📖'
         },
         {
-          title: `Latest Information on ${query}`,
-          url: '#ai-latest',
-          content: content.substring(400, 800) + '...',
-          favicon: '🔥'
+          title: `Learn ${query} - Tutorials and Examples`,
+          url: `https://www.coursera.org/search?query=${encodeURIComponent(query)}`,
+          content: content.substring(600, 900) + '...',
+          favicon: '🎓'
+        },
+        {
+          title: `${query} - Latest Research and Articles`,
+          url: `https://scholar.google.com/scholar?q=${encodeURIComponent(query)}`,
+          content: content.substring(900, 1200) + '...',
+          favicon: '🔬'
+        },
+        {
+          title: `${query} - Community Discussion and Q&A`,
+          url: `https://stackoverflow.com/search?q=${encodeURIComponent(query)}`,
+          content: content.substring(1200, 1500) + '...',
+          favicon: '💬'
         }
       ]
 

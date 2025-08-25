@@ -210,17 +210,23 @@ export const GeminiSearchInterface: React.FC = () => {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
                   >
-                    <Card className="gaming-card hover:border-primary/50 transition-colors cursor-pointer">
+                    <Card 
+                      className="gaming-card hover:border-primary/50 transition-colors cursor-pointer"
+                      onClick={() => window.open(result.url, '_blank', 'noopener,noreferrer')}
+                    >
                       <CardHeader className="pb-3">
                         <CardTitle className="flex items-center gap-2 text-lg">
                           <span className="text-xl">{result.favicon}</span>
-                          {result.title}
-                          <ExternalLink className="w-4 h-4 text-muted-foreground ml-auto" />
+                          <span className="flex-1 truncate">{result.title}</span>
+                          <ExternalLink className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                         </CardTitle>
+                        <CardDescription className="text-xs text-muted-foreground/70 truncate">
+                          {result.url}
+                        </CardDescription>
                       </CardHeader>
                       <CardContent>
                         <p className="text-muted-foreground text-sm leading-relaxed line-clamp-3">
-                          {result.content.substring(0, 300)}...
+                          {result.content}
                         </p>
                       </CardContent>
                     </Card>
