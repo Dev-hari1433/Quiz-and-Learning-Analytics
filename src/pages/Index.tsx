@@ -4,11 +4,16 @@ import { Brain, Zap, Trophy, Target, Play, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EducationScene } from '@/components/3d/EducationScene';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useSessionUser } from '@/hooks/useSessionUser';
+import NamePrompt from '@/components/NamePrompt';
 
 const Index = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, signOut } = useAuth();
+  const { sessionUser, setUserName, clearSession, isLoggedIn } = useSessionUser();
+
+  if (!isLoggedIn) {
+    return <NamePrompt onNameSubmit={setUserName} />;
+  }
 
   return (
     <div className="min-h-screen bg-background overflow-hidden">
@@ -38,30 +43,22 @@ const Index = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            {isAuthenticated ? (
-              <>
-                <Button 
-                  variant="outline" 
-                  className="gaming-card border-primary/30 hover:bg-primary/10"
-                  onClick={() => navigate('/dashboard')}
-                >
-                  Dashboard
-                </Button>
-                <Button 
-                  variant="outline"
-                  onClick={signOut}
-                >
-                  Sign Out
-                </Button>
-              </>
-            ) : (
-              <Button 
-                className="gaming-button-primary"
-                onClick={() => navigate('/auth')}
-              >
-                Sign In
-              </Button>
-            )}
+            <span className="text-sm text-muted-foreground mr-4">
+              Welcome, {sessionUser?.name}!
+            </span>
+            <Button 
+              variant="outline" 
+              className="gaming-card border-primary/30 hover:bg-primary/10"
+              onClick={() => navigate('/dashboard')}
+            >
+              Dashboard
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={clearSession}
+            >
+              Change Name
+            </Button>
           </motion.div>
         </nav>
 
@@ -129,10 +126,10 @@ const Index = () => {
             >
               <Button 
                 className="gaming-button-primary text-lg px-8 py-4 h-auto group"
-                onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+                onClick={() => navigate('/dashboard')}
               >
                 <Play className="w-6 h-6 mr-2" />
-                {isAuthenticated ? 'Go to Dashboard' : 'Start Learning'}
+                Go to Dashboard
                 <motion.div
                   className="ml-2"
                   animate={{ x: [0, 5, 0] }}
