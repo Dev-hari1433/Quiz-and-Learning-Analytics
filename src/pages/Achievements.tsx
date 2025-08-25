@@ -3,26 +3,31 @@ import { motion } from 'framer-motion';
 import { Trophy, Star, Target, Zap, Award } from 'lucide-react';
 import { AchievementBadge } from '@/components/gaming/AchievementBadge';
 import { EnhancedBadgeSystem, EnhancedAchievement } from '@/components/achievements/EnhancedBadgeSystem';
-import { GameStateManager } from '@/lib/gameState';
+import { useRealTimeData } from '@/hooks/useRealTimeData';
 
 const Achievements = () => {
+  const { userStats, quizHistory, loading } = useRealTimeData();
 
-  const [gameState, setGameState] = useState(GameStateManager.getInstance().getState());
-  
-  useEffect(() => {
-    const unsubscribe = GameStateManager.getInstance().subscribe(setGameState);
-    return unsubscribe;
-  }, []);
+  if (loading && !userStats) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading achievements...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Calculate achievements based on real user data
   const calculateAchievements = (): EnhancedAchievement[] => {
-    const currentAccuracy = gameState.totalQuestions > 0 
-      ? Math.round((gameState.totalCorrectAnswers / gameState.totalQuestions) * 100) 
+    const currentAccuracy = (userStats?.total_questions || 0) > 0 
+      ? Math.round(((userStats?.total_correct_answers || 0) / (userStats?.total_questions || 1)) * 100) 
       : 0;
-    const subjectCount = [...new Set(gameState.quizHistory.map(quiz => quiz.subject))].length;
-    const perfectScores = gameState.quizHistory.filter(quiz => quiz.correctAnswers === quiz.totalQuestions).length;
-    const averageTime = gameState.quizHistory.length > 0 
-      ? gameState.quizHistory.reduce((sum, quiz) => sum + (quiz.timeSpent / quiz.totalQuestions), 0) / gameState.quizHistory.length 
+    const subjectCount = [...new Set(quizHistory.map(quiz => quiz.subject))].length;
+    const perfectScores = quizHistory.filter(quiz => quiz.correct_answers === quiz.total_questions).length;
+    const averageTime = quizHistory.length > 0 
+      ? quizHistory.reduce((sum, quiz) => sum + ((quiz.time_spent || 0) / quiz.total_questions), 0) / quizHistory.length 
       : 0;
 
     return [
@@ -33,13 +38,13 @@ const Achievements = () => {
         title: 'Quiz Legend',
         description: 'Complete 100 quizzes with 90%+ accuracy',
         icon: 'crown',
-        earned: gameState.totalQuizzes >= 100 && currentAccuracy >= 90,
-        earnedDate: gameState.totalQuizzes >= 100 && currentAccuracy >= 90 ? new Date().toISOString().split('T')[0] : undefined,
+        earned: (userStats?.total_quizzes || 0) >= 100 && currentAccuracy >= 90,
+        earnedDate: (userStats?.total_quizzes || 0) >= 100 && currentAccuracy >= 90 ? new Date().toISOString().split('T')[0] : undefined,
         rarity: 'legendary',
         xpReward: 500,
         level: 25,
         difficulty: 'extreme',
-        progress: Math.min(gameState.totalQuizzes, 100),
+        progress: Math.min(userStats?.total_quizzes || 0, 100),
         maxProgress: 100
       },
       {
@@ -49,8 +54,8 @@ const Achievements = () => {
         title: 'Speed Demon',
         description: 'Average response time under 5 seconds',
         icon: 'zap',
-        earned: averageTime < 5 && gameState.totalQuizzes >= 10,
-        earnedDate: averageTime < 5 && gameState.totalQuizzes >= 10 ? new Date().toISOString().split('T')[0] : undefined,
+        earned: averageTime < 5 && (userStats?.total_quizzes || 0) >= 10,
+        earnedDate: averageTime < 5 && (userStats?.total_quizzes || 0) >= 10 ? new Date().toISOString().split('T')[0] : undefined,
         rarity: 'epic',
         xpReward: 250,
         level: 15,
@@ -65,13 +70,13 @@ const Achievements = () => {
         title: 'Consistent Learner',
         description: 'Maintain a 7-day learning streak',
         icon: 'target',
-        earned: gameState.streak >= 7,
-        earnedDate: gameState.streak >= 7 ? new Date().toISOString().split('T')[0] : undefined,
+        earned: (userStats?.streak || 0) >= 7,
+        earnedDate: (userStats?.streak || 0) >= 7 ? new Date().toISOString().split('T')[0] : undefined,
         rarity: 'rare',
         xpReward: 150,
         level: 10,
         difficulty: 'medium',
-        progress: gameState.streak,
+        progress: userStats?.streak || 0,
         maxProgress: 7
       },
       {
@@ -113,13 +118,13 @@ const Achievements = () => {
         title: 'First Steps',
         description: 'Complete your first quiz',
         icon: 'trophy',
-        earned: gameState.totalQuizzes >= 1,
-        earnedDate: gameState.totalQuizzes >= 1 ? new Date().toISOString().split('T')[0] : undefined,
+        earned: (userStats?.total_quizzes || 0) >= 1,
+        earnedDate: (userStats?.total_quizzes || 0) >= 1 ? new Date().toISOString().split('T')[0] : undefined,
         rarity: 'common',
         xpReward: 50,
         level: 1,
         difficulty: 'easy',
-        progress: Math.min(gameState.totalQuizzes, 1),
+        progress: Math.min(userStats?.total_quizzes || 0, 1),
         maxProgress: 1
       },
       {
@@ -129,13 +134,13 @@ const Achievements = () => {
         title: 'Quiz Enthusiast',
         description: 'Complete 10 quizzes',
         icon: 'brain',
-        earned: gameState.totalQuizzes >= 10,
-        earnedDate: gameState.totalQuizzes >= 10 ? new Date().toISOString().split('T')[0] : undefined,
+        earned: (userStats?.total_quizzes || 0) >= 10,
+        earnedDate: (userStats?.total_quizzes || 0) >= 10 ? new Date().toISOString().split('T')[0] : undefined,
         rarity: 'common',
         xpReward: 100,
         level: 3,
         difficulty: 'easy',
-        progress: Math.min(gameState.totalQuizzes, 10),
+        progress: Math.min(userStats?.total_quizzes || 0, 10),
         maxProgress: 10
       },
       {
@@ -145,14 +150,14 @@ const Achievements = () => {
         title: 'High Achiever',
         description: 'Maintain 80%+ accuracy over 20 quizzes',
         icon: 'star',
-        earned: gameState.totalQuizzes >= 20 && currentAccuracy >= 80,
-        earnedDate: gameState.totalQuizzes >= 20 && currentAccuracy >= 80 ? new Date().toISOString().split('T')[0] : undefined,
+        earned: (userStats?.total_quizzes || 0) >= 20 && currentAccuracy >= 80,
+        earnedDate: (userStats?.total_quizzes || 0) >= 20 && currentAccuracy >= 80 ? new Date().toISOString().split('T')[0] : undefined,
         rarity: 'rare',
         xpReward: 200,
         level: 8,
         difficulty: 'medium',
-        progress: gameState.totalQuizzes >= 20 ? currentAccuracy : gameState.totalQuizzes,
-        maxProgress: gameState.totalQuizzes >= 20 ? 80 : 20
+        progress: (userStats?.total_quizzes || 0) >= 20 ? currentAccuracy : (userStats?.total_quizzes || 0),
+        maxProgress: (userStats?.total_quizzes || 0) >= 20 ? 80 : 20
       },
       {
         id: '9',
@@ -161,13 +166,13 @@ const Achievements = () => {
         title: 'Level Master',
         description: 'Reach level 10',
         icon: 'crown',
-        earned: gameState.level >= 10,
-        earnedDate: gameState.level >= 10 ? new Date().toISOString().split('T')[0] : undefined,
+        earned: (userStats?.level || 1) >= 10,
+        earnedDate: (userStats?.level || 1) >= 10 ? new Date().toISOString().split('T')[0] : undefined,
         rarity: 'epic',
         xpReward: 500,
         level: 10,
         difficulty: 'hard',
-        progress: gameState.level,
+        progress: userStats?.level || 1,
         maxProgress: 10
       },
       {
@@ -177,13 +182,13 @@ const Achievements = () => {
         title: 'XP Collector',
         description: 'Earn 1000 XP',
         icon: 'zap',
-        earned: gameState.totalXP >= 1000,
-        earnedDate: gameState.totalXP >= 1000 ? new Date().toISOString().split('T')[0] : undefined,
+        earned: (userStats?.total_xp || 0) >= 1000,
+        earnedDate: (userStats?.total_xp || 0) >= 1000 ? new Date().toISOString().split('T')[0] : undefined,
         rarity: 'common',
         xpReward: 100,
         level: 5,
         difficulty: 'easy',
-        progress: Math.min(gameState.totalXP, 1000),
+        progress: Math.min(userStats?.total_xp || 0, 1000),
         maxProgress: 1000
       }
     ];
@@ -191,15 +196,15 @@ const Achievements = () => {
 
   const achievements = calculateAchievements();
 
-  const userStats = {
-    totalXP: gameState.totalXP,
-    level: gameState.level,
-    streak: gameState.streak,
-    quizzesCompleted: gameState.totalQuizzes,
-    averageScore: gameState.totalQuestions > 0 ? Math.round((gameState.totalCorrectAnswers / gameState.totalQuestions) * 100) : 0,
-    totalStudyTime: gameState.studyTime,
-    perfectScores: gameState.quizHistory.filter(quiz => quiz.correctAnswers === quiz.totalQuestions).length,
-    subjectsCompleted: [...new Set(gameState.quizHistory.map(quiz => quiz.subject))].length
+  const badgeUserStats = {
+    totalXP: userStats?.total_xp || 0,
+    level: userStats?.level || 1,
+    streak: userStats?.streak || 0,
+    quizzesCompleted: userStats?.total_quizzes || 0,
+    averageScore: (userStats?.total_questions || 0) > 0 ? Math.round(((userStats?.total_correct_answers || 0) / (userStats?.total_questions || 1)) * 100) : 0,
+    totalStudyTime: userStats?.study_time || 0,
+    perfectScores: quizHistory.filter(quiz => quiz.correct_answers === quiz.total_questions).length,
+    subjectsCompleted: [...new Set(quizHistory.map(quiz => quiz.subject))].length
   };
 
   return (
@@ -223,7 +228,7 @@ const Achievements = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          <EnhancedBadgeSystem achievements={achievements} userStats={userStats} />
+          <EnhancedBadgeSystem achievements={achievements} userStats={badgeUserStats} />
         </motion.div>
 
         {/* Achievement Tips */}

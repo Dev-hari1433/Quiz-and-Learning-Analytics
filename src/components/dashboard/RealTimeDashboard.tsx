@@ -13,7 +13,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { GameStateManager } from '@/lib/gameState';
+import { useRealTimeData } from '@/hooks/useRealTimeData';
+import { useSessionUser } from '@/hooks/useSessionUser';
 
 interface RealTimeStats {
   currentXP: number;
@@ -36,21 +37,27 @@ interface RealTimeStats {
 
 export const RealTimeDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [gameState, setGameState] = useState(GameStateManager.getInstance().getState());
+  const { userStats, quizHistory, loading } = useRealTimeData();
+  const { sessionUser } = useSessionUser();
 
-  useEffect(() => {
-    const gameManager = GameStateManager.getInstance();
-    const unsubscribe = gameManager.subscribe(setGameState);
-    return unsubscribe;
-  }, []);
+  if (loading && !userStats) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
-  // Calculate real stats from game state
-  const currentXP = gameState.totalXP % 1000;
+  // Calculate real stats from user data
+  const currentXP = (userStats?.total_xp || 0) % 1000;
   const maxXP = 1000;
-  const level = gameState.level;
+  const level = userStats?.level || 1;
   const todayXP = getTodayXP();
-  const currentAccuracy = gameState.totalQuestions > 0 
-    ? Math.round((gameState.totalCorrectAnswers / gameState.totalQuestions) * 100) 
+  const currentAccuracy = (userStats?.total_questions || 0) > 0 
+    ? Math.round(((userStats?.total_correct_answers || 0) / (userStats?.total_questions || 1)) * 100) 
     : 0;
   const formatTime = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
@@ -65,32 +72,32 @@ export const RealTimeDashboard: React.FC = () => {
   function getTodayXP(): number {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return gameState.quizHistory
-      .filter(quiz => quiz.timestamp >= today)
-      .reduce((total, quiz) => total + (quiz.correctAnswers * 10), 0);
+    return quizHistory
+      .filter(quiz => new Date(quiz.created_at) >= today)
+      .reduce((total, quiz) => total + (quiz.correct_answers * 10), 0);
   }
 
   function getAverageQuizTime(): number {
-    if (gameState.quizHistory.length === 0) return 0;
-    return gameState.quizHistory.reduce((sum, quiz) => sum + quiz.timeSpent, 0) / gameState.quizHistory.length;
+    if (quizHistory.length === 0) return 0;
+    return quizHistory.reduce((sum, quiz) => sum + (quiz.time_spent || 0), 0) / quizHistory.length;
   }
 
   function getRecentPerformance(): number[] {
-    return gameState.quizHistory
+    return quizHistory
       .slice(0, 7)
-      .map(quiz => Math.round((quiz.correctAnswers / quiz.totalQuestions) * 100))
+      .map(quiz => Math.round((quiz.correct_answers / quiz.total_questions) * 100))
       .reverse();
   }
 
   function getTopSubjects() {
     const subjectStats: { [key: string]: { total: number, correct: number, count: number } } = {};
     
-    gameState.quizHistory.forEach(quiz => {
+    quizHistory.forEach(quiz => {
       if (!subjectStats[quiz.subject]) {
         subjectStats[quiz.subject] = { total: 0, correct: 0, count: 0 };
       }
-      subjectStats[quiz.subject].total += quiz.totalQuestions;
-      subjectStats[quiz.subject].correct += quiz.correctAnswers;
+      subjectStats[quiz.subject].total += quiz.total_questions;
+      subjectStats[quiz.subject].correct += quiz.correct_answers;
       subjectStats[quiz.subject].count += 1;
     });
 
@@ -152,7 +159,7 @@ export const RealTimeDashboard: React.FC = () => {
             <h1 className="text-4xl font-bold mb-2">
               Welcome back, 
               <span className="gaming-button-secondary px-3 py-1 rounded-lg ml-3">
-                Smart AI
+                {sessionUser?.name || 'Learner'}
               </span>
             </h1>
             <p className="text-muted-foreground text-lg">Ready to level up your learning?</p>
@@ -188,17 +195,17 @@ export const RealTimeDashboard: React.FC = () => {
           <StatsCard
             title="Today's XP"
             value={todayXP.toLocaleString()}
-            subtitle={gameState.totalQuizzes > 0 ? "Keep learning!" : "Start your first quiz!"}
+            subtitle={(userStats?.total_quizzes || 0) > 0 ? "Keep learning!" : "Start your first quiz!"}
             icon={Zap}
             trend="up"
-            trendValue={`${gameState.totalXP} total`}
+            trendValue={`${userStats?.total_xp || 0} total`}
             color="warning"
           />
           
           <StatsCard
             title="Current Accuracy"
             value={`${currentAccuracy}%`}
-            subtitle={`${gameState.totalCorrectAnswers}/${gameState.totalQuestions} correct`}
+            subtitle={`${userStats?.total_correct_answers || 0}/${userStats?.total_questions || 0} correct`}
             icon={Target}
             trend={currentAccuracy >= 70 ? 'up' : currentAccuracy === 0 ? 'neutral' : 'down'}
             trendValue={currentAccuracy >= 70 ? 'Great!' : currentAccuracy === 0 ? 'Start learning' : 'Keep practicing'}
@@ -207,17 +214,17 @@ export const RealTimeDashboard: React.FC = () => {
           
           <StatsCard
             title="Study Streak"
-            value={`${gameState.streak} days`}
-            subtitle={gameState.streak > 0 ? "Keep it going!" : "Start your streak!"}
+            value={`${userStats?.streak || 0} days`}
+            subtitle={(userStats?.streak || 0) > 0 ? "Keep it going!" : "Start your streak!"}
             icon={Flame}
-            trend={gameState.streak > 0 ? 'up' : 'neutral'}
-            trendValue={gameState.streak > 0 ? "Active" : "Build your streak"}
+            trend={(userStats?.streak || 0) > 0 ? 'up' : 'neutral'}
+            trendValue={(userStats?.streak || 0) > 0 ? "Active" : "Build your streak"}
             color="secondary"
           />
           
           <StatsCard
             title="Study Time"
-            value={formatTime(gameState.studyTime)}
+            value={formatTime(userStats?.study_time || 0)}
             subtitle="Total learning time"
             icon={Clock}
             trend="up"
@@ -228,7 +235,7 @@ export const RealTimeDashboard: React.FC = () => {
           <StatsCard
             title="Current Level"
             value={`${level}`}
-            subtitle={`${gameState.totalXP} XP earned`}
+            subtitle={`${userStats?.total_xp || 0} XP earned`}
             icon={Trophy}
             trend="up"
             trendValue={`${1000 - currentXP} XP to next level`}
@@ -237,7 +244,7 @@ export const RealTimeDashboard: React.FC = () => {
           
           <StatsCard
             title="Total Quizzes"
-            value={gameState.totalQuizzes}
+            value={userStats?.total_quizzes || 0}
             subtitle="Completed"
             icon={Users}
             color="primary"
@@ -271,7 +278,7 @@ export const RealTimeDashboard: React.FC = () => {
                 </div>
                 <Progress value={currentAccuracy} className="h-3" />
                 <p className="text-xs text-muted-foreground mt-1">
-                  {gameState.totalQuizzes > 0 ? 'Keep improving!' : 'Take your first quiz!'}
+                  {(userStats?.total_quizzes || 0) > 0 ? 'Keep improving!' : 'Take your first quiz!'}
                 </p>
               </div>
             </CardContent>

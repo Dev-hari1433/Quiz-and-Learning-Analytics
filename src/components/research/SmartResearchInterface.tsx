@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, FileText, Sparkles, Globe, BookOpen, Lightbulb, ExternalLink, Clock, BarChart3, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
-import { GameStateManager } from '@/lib/gameState';
+import { useRealTimeData } from '@/hooks/useRealTimeData';
+import { useSessionUser } from '@/hooks/useSessionUser';
 
 interface SearchResult {
   title: string;
@@ -26,7 +27,7 @@ interface AnalysisResult {
   topics: string[];
 }
 
-export const GeminiSearchInterface: React.FC = () => {
+export const SmartResearchInterface: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [textToAnalyze, setTextToAnalyze] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -40,28 +41,9 @@ export const GeminiSearchInterface: React.FC = () => {
     startTime: Date.now()
   });
   const { toast } = useToast();
+  const { sessionUser } = useSessionUser();
+  const { saveResearchActivity } = useRealTimeData();
 
-  const gameState = GameStateManager.getInstance();
-
-  useEffect(() => {
-    // Track time spent in research session
-    const interval = setInterval(() => {
-      setSessionStats(prev => ({
-        ...prev,
-        timeSpent: Math.floor((Date.now() - prev.startTime) / 1000)
-      }));
-    }, 1000);
-
-    return () => {
-      clearInterval(interval);
-      // Add study time when component unmounts
-      const minutesSpent = Math.floor((Date.now() - sessionStats.startTime) / 60000);
-      if (minutesSpent > 0) {
-        gameState.addStudyTime(minutesSpent);
-      }
-    };
-  }, []);
-  
   const searchWithGemini = async (query: string): Promise<SearchResult[]> => {
     const supabaseUrl = 'https://hjepdnbfvrqmqbrsycml.supabase.co';
     const response = await fetch(`${supabaseUrl}/functions/v1/gemini-search`, {
@@ -130,6 +112,15 @@ export const GeminiSearchInterface: React.FC = () => {
       return;
     }
 
+    if (!sessionUser) {
+      toast({
+        title: "Name required",
+        description: "Please enter your name to save research activities.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsSearching(true);
     const searchStartTime = Date.now();
     
@@ -137,22 +128,27 @@ export const GeminiSearchInterface: React.FC = () => {
       const results = await searchWithGemini(searchQuery);
       setSearchResults(results);
       
-      // Update session stats and game state
+      // Update session stats
       setSessionStats(prev => ({
         ...prev,
         searchesPerformed: prev.searchesPerformed + 1
       }));
       
-      // Calculate XP based on search complexity and results
-      const searchXP = Math.min(50, searchQuery.length * 2 + results.length);
+      // Calculate time spent and save to Supabase
       const timeSpent = Math.floor((Date.now() - searchStartTime) / 1000);
       
-      // Add research activity to game state
-      gameState.addStudyTime(Math.max(1, Math.floor(timeSpent / 60)));
+      // Save research activity to Supabase
+      await saveResearchActivity({
+        user_name: sessionUser.name,
+        activity_type: 'search',
+        query_text: searchQuery,
+        time_spent: timeSpent,
+        results_count: results.length
+      });
       
       toast({
         title: "Search completed",
-        description: `Found ${results.length} comprehensive results! +${searchXP} XP earned`
+        description: `Found ${results.length} comprehensive results! Research saved to your history.`
       });
     } catch (error) {
       toast({
@@ -175,6 +171,15 @@ export const GeminiSearchInterface: React.FC = () => {
       return;
     }
 
+    if (!sessionUser) {
+      toast({
+        title: "Name required",
+        description: "Please enter your name to save research activities.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsAnalyzing(true);
     const analysisStartTime = Date.now();
     
@@ -182,22 +187,27 @@ export const GeminiSearchInterface: React.FC = () => {
       const result = await analyzeTextWithGemini(textToAnalyze);
       setAnalysisResult(result);
       
-      // Update session stats and game state
+      // Update session stats
       setSessionStats(prev => ({
         ...prev,
         textsAnalyzed: prev.textsAnalyzed + 1
       }));
       
-      // Calculate XP based on text complexity
-      const analysisXP = Math.min(100, textToAnalyze.length / 10 + (result?.keyPoints.length || 0) * 5);
+      // Calculate time spent and save to Supabase
       const timeSpent = Math.floor((Date.now() - analysisStartTime) / 1000);
       
-      // Add research activity to game state
-      gameState.addStudyTime(Math.max(1, Math.floor(timeSpent / 60)));
+      // Save research activity to Supabase
+      await saveResearchActivity({
+        user_name: sessionUser.name,
+        activity_type: 'analysis',
+        query_text: `Text analysis: ${textToAnalyze.substring(0, 100)}...`,
+        time_spent: timeSpent,
+        results_count: result?.keyPoints.length || 0
+      });
       
       toast({
         title: "Analysis completed",
-        description: `Text successfully analyzed! +${Math.round(analysisXP)} XP earned`
+        description: "Text successfully analyzed! Research saved to your history."
       });
     } catch (error) {
       toast({
@@ -230,7 +240,7 @@ export const GeminiSearchInterface: React.FC = () => {
             </div>
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-secondary" />
-              <span>{Math.floor(sessionStats.timeSpent / 60)}m {sessionStats.timeSpent % 60}s</span>
+              <span>{Math.floor((Date.now() - sessionStats.startTime) / 60000)}m active</span>
             </div>
           </div>
           <Badge variant="outline" className="neon-glow">

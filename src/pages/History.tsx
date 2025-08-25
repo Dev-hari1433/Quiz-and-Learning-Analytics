@@ -1,8 +1,8 @@
 import React from 'react';
-import RealTimeHistory from './RealTimeHistory';
+import RealTimeActivityTimeline from '@/components/history/RealTimeActivityTimeline';
 
 const History = () => {
-  return <RealTimeHistory />;
+  return <RealTimeActivityTimeline />;
 };
 
 export default History;
