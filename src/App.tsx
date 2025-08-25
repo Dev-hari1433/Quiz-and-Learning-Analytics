@@ -32,6 +32,8 @@ const App = () => (
           <Route path="/smart-research" element={<SmartResearch />} />
           <Route path="/history" element={<History />} />
           <Route path="/achievements" element={<Achievements />} />
+          {/* Redirect /research to /smart-research for backwards compatibility */}
+          <Route path="/research" element={<SmartResearch />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

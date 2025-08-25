@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, Target, Clock, Brain } from 'lucide-react';
+import { TrendingUp, Target, Clock, Brain, BookOpen } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { StatsCard } from '@/components/gaming/StatsCard';
 import { RealTimePerformanceCharts } from '@/components/analytics/RealTimePerformanceCharts';
 import { useRealTimeData } from '@/hooks/useRealTimeData';
@@ -14,6 +15,53 @@ const Analytics = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading your analytics...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show empty state for new users
+  if (!userStats || (userStats.total_quizzes === 0 && userStats.research_sessions === 0)) {
+    return (
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-7xl mx-auto space-y-8">
+          <motion.div
+            className="text-center"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <h1 className="text-4xl font-bold mb-2">Analytics Dashboard</h1>
+            <p className="text-muted-foreground text-lg">Track your learning progress and insights</p>
+          </motion.div>
+
+          <motion.div
+            className="text-center gaming-card p-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <TrendingUp className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-2xl font-bold mb-2">No Data Yet!</h2>
+            <p className="text-muted-foreground mb-6">
+              Start taking quizzes and researching to see your analytics and progress insights here.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button 
+                className="gaming-button-primary"
+                onClick={() => window.location.href = '/generate-quiz'}
+              >
+                <Brain className="w-4 h-4 mr-2" />
+                Take Your First Quiz
+              </Button>
+              <Button 
+                className="gaming-button-secondary"
+                onClick={() => window.location.href = '/smart-research'}
+              >
+                <BookOpen className="w-4 h-4 mr-2" />
+                Start Researching
+              </Button>
+            </div>
+          </motion.div>
         </div>
       </div>
     );
