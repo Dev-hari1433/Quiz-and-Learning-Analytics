@@ -27,6 +27,7 @@ interface ActivityEvent {
     achievement?: string;
     newLevel?: number;
     streakCount?: number;
+    questionsAnswered?: number;
   };
   icon: string;
   status: 'success' | 'warning' | 'info' | 'error';

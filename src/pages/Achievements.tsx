@@ -9,7 +9,7 @@ const Achievements = () => {
   const achievements: EnhancedAchievement[] = [
     {
       id: '1',
-      type: 'platinum',
+      type: 'legendary',
       category: 'completion',
       title: 'Quiz Legend',
       description: 'Complete 100 quizzes with 90%+ accuracy',
@@ -17,11 +17,13 @@ const Achievements = () => {
       earned: true,
       earnedDate: '2024-01-15',
       rarity: 'legendary',
-      xpReward: 500
+      xpReward: 500,
+      level: 25,
+      difficulty: 'extreme'
     },
     {
       id: '2',
-      type: 'gold',
+      type: 'epic',
       category: 'speed',
       title: 'Speed Demon',
       description: 'Answer 10 questions in under 5 seconds each',
@@ -29,11 +31,13 @@ const Achievements = () => {
       earned: true,
       earnedDate: '2024-01-10',
       rarity: 'epic',
-      xpReward: 250
+      xpReward: 250,
+      level: 15,
+      difficulty: 'hard'
     },
     {
       id: '3',
-      type: 'silver',
+      type: 'rare',
       category: 'streak',
       title: 'Consistent Learner',
       description: 'Maintain a 15-day learning streak',
@@ -41,11 +45,13 @@ const Achievements = () => {
       earned: true,
       earnedDate: '2024-01-05',
       rarity: 'rare',
-      xpReward: 150
+      xpReward: 150,
+      level: 10,
+      difficulty: 'medium'
     },
     {
       id: '4',
-      type: 'bronze',
+      type: 'common',
       category: 'knowledge',
       title: 'Subject Explorer',
       description: 'Complete quizzes in 5 different subjects',
@@ -53,7 +59,9 @@ const Achievements = () => {
       earned: true,
       earnedDate: '2024-01-01',
       rarity: 'common',
-      xpReward: 100
+      xpReward: 100,
+      level: 5,
+      difficulty: 'easy'
     },
     {
       id: '5',
@@ -66,11 +74,13 @@ const Achievements = () => {
       progress: 2,
       maxProgress: 3,
       rarity: 'epic',
-      xpReward: 300
+      xpReward: 300,
+      level: 8,
+      difficulty: 'hard'
     },
     {
       id: '6',
-      type: 'gold',
+      type: 'rare',
       category: 'social',
       title: 'Top Competitor',
       description: 'Reach top 10 on global leaderboard',
@@ -79,11 +89,13 @@ const Achievements = () => {
       progress: 15,
       maxProgress: 10,
       rarity: 'rare',
-      xpReward: 400
+      xpReward: 400,
+      level: 20,
+      difficulty: 'hard'
     },
     {
       id: '7',
-      type: 'silver',
+      type: 'common',
       category: 'speed',
       title: 'Quick Thinker',
       description: 'Average response time under 8 seconds',
@@ -92,11 +104,13 @@ const Achievements = () => {
       progress: 9,
       maxProgress: 8,
       rarity: 'common',
-      xpReward: 120
+      xpReward: 120,
+      level: 3,
+      difficulty: 'easy'
     },
     {
       id: '8',
-      type: 'bronze',
+      type: 'common',
       category: 'knowledge',
       title: 'Research Master',
       description: 'Use Smart Research 20 times',
@@ -105,11 +119,13 @@ const Achievements = () => {
       progress: 12,
       maxProgress: 20,
       rarity: 'common',
-      xpReward: 80
+      xpReward: 80,
+      level: 6,
+      difficulty: 'medium'
     },
     {
       id: '9',
-      type: 'platinum',
+      type: 'legendary',
       category: 'completion',
       title: 'Master Learner',
       description: 'Reach level 50',
@@ -118,7 +134,9 @@ const Achievements = () => {
       progress: 12,
       maxProgress: 50,
       rarity: 'legendary',
-      xpReward: 1000
+      xpReward: 1000,
+      level: 50,
+      difficulty: 'extreme'
     },
     {
       id: '10',
@@ -131,7 +149,9 @@ const Achievements = () => {
       progress: 0,
       maxProgress: 5,
       rarity: 'rare',
-      xpReward: 200
+      xpReward: 200,
+      level: 4,
+      difficulty: 'medium'
     }
   ];
 
