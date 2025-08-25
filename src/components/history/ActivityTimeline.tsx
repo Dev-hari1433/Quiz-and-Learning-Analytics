@@ -59,7 +59,7 @@ const getDifficultyColor = (difficulty: string) => {
 
 export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({ activities }) => {
   const groupedActivities = activities.reduce((groups, activity) => {
-    const date = activity.timestamp.toDateString();
+    const date = new Date(activity.timestamp).toDateString();
     if (!groups[date]) {
       groups[date] = [];
     }
@@ -67,7 +67,8 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({ activities }
     return groups;
   }, {} as Record<string, ActivityItem[]>);
 
-  const formatTime = (date: Date) => {
+  const formatTime = (timestamp: Date | string | number) => {
+    const date = new Date(timestamp);
     return date.toLocaleTimeString('en-US', { 
       hour: '2-digit', 
       minute: '2-digit',
@@ -208,7 +209,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({ activities }
             {/* Activities */}
             <div className="space-y-6">
               {dayActivities
-                .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+                .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
                 .map((activity) => (
                   <ActivityCard key={activity.id} activity={activity} />
                 ))}

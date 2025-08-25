@@ -94,7 +94,11 @@ class GameStateManager {
         const parsed = JSON.parse(saved);
         this.state = {
           ...parsed,
-          lastUpdated: new Date(parsed.lastUpdated)
+          lastUpdated: new Date(parsed.lastUpdated),
+          quizHistory: parsed.quizHistory?.map((quiz: any) => ({
+            ...quiz,
+            timestamp: new Date(quiz.timestamp)
+          })) || []
         };
       } catch (error) {
         console.error('Failed to load game state:', error);
