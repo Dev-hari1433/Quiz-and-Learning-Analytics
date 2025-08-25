@@ -34,110 +34,46 @@ export const GeminiSearchInterface: React.FC = () => {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const { toast } = useToast();
   
-  // Get API key from environment
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-
-  // Initialize Gemini API
-  const initializeGemini = async () => {
-    try {
-      if (!apiKey) {
-        throw new Error('Gemini API key is required');
-      }
-      const genAI = new GoogleGenerativeAI(apiKey);
-      return genAI.getGenerativeModel({ model: 'gemini-pro' });
-    } catch (error) {
-      console.error('Failed to initialize Gemini API:', error);
-      throw error;
-    }
-  };
-
   const searchWithGemini = async (query: string): Promise<SearchResult[]> => {
-    const model = await initializeGemini();
-
-    const prompt = `
-      Provide comprehensive research information about: "${query}"
-      
-      Please structure your response as a detailed research summary with:
-      1. Main overview and definition
-      2. Key concepts and important points
-      3. Current trends or developments
-      4. Practical applications or examples
-      5. Related topics to explore further
-      
-      Format your response in a clear, educational manner suitable for learning.
-    `;
-
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-
-    // Simulate search results format
-    return [
-      {
-        title: `Comprehensive Guide to ${query}`,
-        url: '#ai-generated-content',
-        content: text,
-        favicon: '🤖'
+    const response = await fetch('/functions/v1/gemini-search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-      {
-        title: `Key Concepts: ${query}`,
-        url: '#ai-concepts',
-        content: text.substring(0, 300) + '...',
-        favicon: '📚'
-      },
-      {
-        title: `Latest Insights on ${query}`,
-        url: '#ai-insights',
-        content: text.substring(300, 600) + '...',
-        favicon: '💡'
-      }
-    ];
+      body: JSON.stringify({ 
+        query,
+        type: 'search'
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Search failed');
+    }
+
+    const data = await response.json();
+    return data.results;
   };
 
   const analyzeTextWithGemini = async (text: string): Promise<AnalysisResult | null> => {
-    const model = await initializeGemini();
+    const response = await fetch('/functions/v1/gemini-search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        text,
+        type: 'analyze'
+      }),
+    });
 
-    const prompt = `
-      Analyze the following text and provide:
-      1. A concise summary (2-3 sentences)
-      2. Key points (bullet format, max 5 points)
-      3. Overall sentiment (positive/negative/neutral)
-      4. Main topics or themes discussed
-      5. Reading difficulty level
-      
-      Text to analyze: "${text}"
-      
-      Please format your response as JSON with the following structure:
-      {
-        "summary": "...",
-        "keyPoints": ["...", "..."],
-        "sentiment": "...",
-        "topics": ["...", "..."],
-        "readingLevel": "..."
-      }
-    `;
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Analysis failed');
+    }
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const analysisText = response.text();
-
-    // Extract structured data (simplified parsing)
-    const wordCount = text.split(' ').length;
-    const readingTime = Math.ceil(wordCount / 200); // Average reading speed
-
-    return {
-      summary: analysisText.substring(0, 200) + '...',
-      keyPoints: [
-        'Key insight extracted from text',
-        'Important concept identified',
-        'Main theme or topic discussed',
-        'Relevant conclusion or takeaway'
-      ],
-      sentiment: 'neutral' as const,
-      wordCount,
-      readingTime,
-      topics: ['Analysis', 'Summary', 'Insights']
-    };
+    const data = await response.json();
+    return data.analysis;
   };
 
   const handleSearch = async () => {
