@@ -1,7 +1,9 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Search, BookOpen, Globe, Lightbulb, Brain } from 'lucide-react';
-import { SmartResearchInterface } from '@/components/research/SmartResearchInterface';
+// Replace the original SmartResearchInterface with the working GeminiSearchInterface
+import { GeminiSearchInterface } from '@/components/research/GeminiSearchInterface';
 
 const SmartResearch = () => {
   return (
@@ -25,7 +27,8 @@ const SmartResearch = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          <SmartResearchInterface />
+          {/* Use the GeminiSearchInterface which calls the edge function directly */}
+          <GeminiSearchInterface />
         </motion.div>
 
         {/* Features Overview */}
