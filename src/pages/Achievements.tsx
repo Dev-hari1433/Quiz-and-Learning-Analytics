@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Trophy, Star, Target, Zap, Award } from 'lucide-react';
 import { AchievementBadge } from '@/components/gaming/AchievementBadge';
 import { EnhancedBadgeSystem, EnhancedAchievement } from '@/components/achievements/EnhancedBadgeSystem';
+import { GameStateManager } from '@/lib/gameState';
 
 const Achievements = () => {
   // Enhanced achievements data with all the features like Kahoot/Duolingo
@@ -155,15 +156,22 @@ const Achievements = () => {
     }
   ];
 
+  const [gameState, setGameState] = useState(GameStateManager.getInstance().getState());
+  
+  useEffect(() => {
+    const unsubscribe = GameStateManager.getInstance().subscribe(setGameState);
+    return unsubscribe;
+  }, []);
+
   const userStats = {
-    totalXP: 4850,
-    level: 12,
-    streak: 7,
-    quizzesCompleted: 89,
-    averageScore: 87,
-    totalStudyTime: 1440,
-    perfectScores: 12,
-    subjectsCompleted: 6
+    totalXP: gameState.totalXP,
+    level: gameState.level,
+    streak: gameState.streak,
+    quizzesCompleted: gameState.totalQuizzes,
+    averageScore: gameState.totalQuestions > 0 ? Math.round((gameState.totalCorrectAnswers / gameState.totalQuestions) * 100) : 0,
+    totalStudyTime: gameState.studyTime,
+    perfectScores: gameState.quizHistory.filter(quiz => quiz.correctAnswers === quiz.totalQuestions).length,
+    subjectsCompleted: [...new Set(gameState.quizHistory.map(quiz => quiz.subject))].length
   };
 
   return (

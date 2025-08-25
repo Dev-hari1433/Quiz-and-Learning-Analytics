@@ -22,45 +22,53 @@ const Quiz = () => {
     return unsubscribe;
   }, []);
 
-  // Sample quiz questions
-  const questions = [
-    {
-      id: '1',
-      question: 'What is the primary purpose of artificial intelligence in education?',
-      options: [
-        'To replace human teachers completely',
-        'To personalize learning experiences for students',
-        'To make education more expensive',
-        'To eliminate the need for textbooks'
-      ],
-      correctAnswer: 1,
-      explanation: 'AI in education aims to personalize learning by adapting to individual student needs, learning styles, and pace, making education more effective and engaging.'
-    },
-    {
-      id: '2',
-      question: 'Which learning technique is most effective for long-term retention?',
-      options: [
-        'Passive reading',
-        'Spaced repetition',
-        'Cramming before exams',
-        'Watching videos only'
-      ],
-      correctAnswer: 1,
-      explanation: 'Spaced repetition involves reviewing information at increasing intervals, which has been proven to significantly improve long-term memory retention.'
-    },
-    {
-      id: '3',
-      question: 'What is the main benefit of gamification in learning?',
-      options: [
-        'It makes learning less serious',
-        'It increases student motivation and engagement',
-        'It reduces the need for assessments',
-        'It simplifies complex topics'
-      ],
-      correctAnswer: 1,
-      explanation: 'Gamification incorporates game elements like points, badges, and leaderboards to increase intrinsic motivation and make learning more engaging and fun.'
+  // Load questions from localStorage (generated quiz) or use default
+  const [questions, setQuestions] = useState(() => {
+    const generatedQuiz = localStorage.getItem('generatedQuiz');
+    if (generatedQuiz) {
+      return JSON.parse(generatedQuiz);
     }
-  ];
+    
+    // Default sample questions with 4 options each
+    return [
+      {
+        id: '1',
+        question: 'What is the primary purpose of artificial intelligence in education?',
+        options: [
+          'To replace human teachers completely',
+          'To personalize learning experiences for students',
+          'To make education more expensive',
+          'To eliminate the need for textbooks'
+        ],
+        correctAnswer: 1,
+        explanation: 'AI in education aims to personalize learning by adapting to individual student needs, learning styles, and pace, making education more effective and engaging.'
+      },
+      {
+        id: '2',
+        question: 'Which learning technique is most effective for long-term retention?',
+        options: [
+          'Passive reading',
+          'Spaced repetition', 
+          'Cramming before exams',
+          'Watching videos only'
+        ],
+        correctAnswer: 1,
+        explanation: 'Spaced repetition involves reviewing information at increasing intervals, which has been proven to significantly improve long-term memory retention.'
+      },
+      {
+        id: '3',
+        question: 'What is the main benefit of gamification in learning?',
+        options: [
+          'It makes learning less serious',
+          'It increases student motivation and engagement',
+          'It reduces the need for assessments',
+          'It simplifies complex topics'
+        ],
+        correctAnswer: 1,
+        explanation: 'Gamification incorporates game elements like points, badges, and leaderboards to increase intrinsic motivation and make learning more engaging and fun.'
+      }
+    ];
+  });
 
   const handleAnswer = (isCorrect: boolean, selectedOption: number) => {
     const currentQ = questions[currentQuestion];

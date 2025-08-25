@@ -108,6 +108,12 @@ export const QuizGenerator: React.FC<QuizGeneratorProps> = ({ onQuizGenerated })
           options: ["Traditional approach", "Modern framework", "Hybrid model", "Custom solution"],
           correctAnswer: 2,
           explanation: "The text advocates for a hybrid model combining traditional and modern approaches."
+        },
+        {
+          question: "What is the key principle mentioned in the content?",
+          options: ["Simplicity", "Complexity", "Flexibility", "Rigidity"],
+          correctAnswer: 2,
+          explanation: "The content emphasizes flexibility as essential for adaptation and success."
         }
       ];
 
@@ -274,29 +280,18 @@ export const QuizGenerator: React.FC<QuizGeneratorProps> = ({ onQuizGenerated })
                       {question.options.map((option, optionIndex) => (
                         <div
                           key={optionIndex}
-                          className={`p-3 rounded border ${
-                            optionIndex === question.correctAnswer
-                              ? 'border-accent bg-accent/10 text-accent'
-                              : 'border-border bg-muted/20'
-                          }`}
+                          className="p-3 rounded border border-border bg-muted/20 hover:bg-muted/30 transition-colors"
                         >
                           <span className="font-medium">
                             {String.fromCharCode(65 + optionIndex)}.
                           </span>{' '}
                           {option}
-                          {optionIndex === question.correctAnswer && (
-                            <CheckCircle className="w-4 h-4 text-accent inline ml-2" />
-                          )}
                         </div>
                       ))}
                     </div>
-                    {question.explanation && (
-                      <div className="p-3 bg-muted/30 rounded border-l-4 border-primary">
-                        <p className="text-sm text-muted-foreground">
-                          <strong>Explanation:</strong> {question.explanation}
-                        </p>
-                      </div>
-                    )}
+                    <div className="text-center text-sm text-muted-foreground">
+                      <p>✨ Answers and explanations will be revealed after you start the quiz!</p>
+                    </div>
                   </CardContent>
                 </Card>
               </motion.div>
