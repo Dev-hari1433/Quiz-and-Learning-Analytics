@@ -12,6 +12,8 @@ import Analytics from "./pages/Analytics";
 import SmartResearch from "./pages/SmartResearch";
 import History from "./pages/History";
 import Achievements from "./pages/Achievements";
+import Auth from "./pages/Auth";
+import AuthGuard from "./components/layout/AuthGuard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,14 +26,15 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/generate-quiz" element={<GenerateQuiz />} />
-          <Route path="/quiz" element={<Quiz />} />
-          <Route path="/leaderboard" element={<Leaderboard />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/research" element={<SmartResearch />} />
-          <Route path="/history" element={<History />} />
-          <Route path="/achievements" element={<Achievements />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
+          <Route path="/generate-quiz" element={<AuthGuard><GenerateQuiz /></AuthGuard>} />
+          <Route path="/quiz" element={<AuthGuard><Quiz /></AuthGuard>} />
+          <Route path="/leaderboard" element={<AuthGuard><Leaderboard /></AuthGuard>} />
+          <Route path="/analytics" element={<AuthGuard><Analytics /></AuthGuard>} />
+          <Route path="/research" element={<AuthGuard><SmartResearch /></AuthGuard>} />
+          <Route path="/history" element={<AuthGuard><History /></AuthGuard>} />
+          <Route path="/achievements" element={<AuthGuard><Achievements /></AuthGuard>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
