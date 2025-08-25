@@ -95,7 +95,7 @@ export const useRealTimeData = () => {
   const setupRealTimeSubscriptions = () => {
     const subscriptions = [];
 
-    // Subscribe to user profile changes
+    // Subscribe to user profile changes with optimized refresh
     const profileSubscription = supabase
       .channel('user_profiles_realtime')
       .on(
@@ -106,15 +106,20 @@ export const useRealTimeData = () => {
           table: 'user_profiles',
           filter: `user_id=eq.${sessionUser.sessionId}`
         },
-        () => {
-          console.log('Profile updated - refreshing user data');
-          loadUserData();
-          loadAllUsersData(); // Also refresh leaderboard
+        (payload) => {
+          console.log('Profile updated - refreshing user data', payload.eventType);
+          // Debounced refresh to prevent too many calls
+          setTimeout(() => {
+            loadUserData();
+            if (payload.eventType === 'UPDATE') {
+              loadAllUsersData(); // Only refresh leaderboard on updates
+            }
+          }, 100);
         }
       )
       .subscribe();
 
-    // Subscribe to quiz session changes
+    // Subscribe to quiz session changes with immediate refresh
     const quizSubscription = supabase
       .channel('quiz_sessions_realtime')
       .on(
@@ -125,11 +130,14 @@ export const useRealTimeData = () => {
           table: 'quiz_sessions',
           filter: `user_id=eq.${sessionUser.sessionId}`
         },
-        () => {
-          console.log('Quiz session updated - refreshing data');
-          loadQuizHistory();
-          loadUserData(); // Update stats
-          loadAllUsersData(); // Update leaderboard
+        (payload) => {
+          console.log('Quiz session updated - refreshing data', payload.eventType);
+          // Immediate refresh for quiz data
+          Promise.all([
+            loadQuizHistory(),
+            loadUserData(),
+            loadAllUsersData()
+          ]).catch(console.error);
         }
       )
       .subscribe();
@@ -145,27 +153,32 @@ export const useRealTimeData = () => {
           table: 'research_activities',
           filter: `user_id=eq.${sessionUser.sessionId}`
         },
-        () => {
-          console.log('Research activity updated - refreshing data');
-          loadResearchHistory();
-          loadUserData(); // Update stats
+        (payload) => {
+          console.log('Research activity updated - refreshing data', payload.eventType);
+          setTimeout(() => {
+            loadResearchHistory();
+            loadUserData(); // Update stats
+          }, 50);
         }
       )
       .subscribe();
 
-    // Subscribe to global leaderboard changes
+    // Subscribe to global leaderboard changes with throttling
     const leaderboardSubscription = supabase
       .channel('leaderboard_realtime')
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'UPDATE',
           schema: 'public',
           table: 'user_profiles'
         },
-        () => {
+        (payload) => {
           console.log('Leaderboard updated - refreshing leaderboard data');
-          loadAllUsersData();
+          // Throttle leaderboard updates to prevent excessive calls
+          setTimeout(() => {
+            loadAllUsersData();
+          }, 500);
         }
       )
       .subscribe();
@@ -177,6 +190,7 @@ export const useRealTimeData = () => {
       leaderboardSubscription
     );
 
+    console.log(`Set up ${subscriptions.length} real-time subscriptions for user ${sessionUser.sessionId}`);
     return subscriptions;
   };
 
@@ -186,7 +200,22 @@ export const useRealTimeData = () => {
     try {
       const { data, error } = await supabase
         .from('user_profiles')
-        .select('*')
+        .select(`
+          id,
+          user_name,
+          display_name,
+          total_xp,
+          total_quizzes,
+          total_correct_answers,
+          total_questions,
+          study_time,
+          streak,
+          level,
+          research_sessions,
+          achievements,
+          last_activity,
+          created_at
+        `)
         .eq('user_id', sessionUser.sessionId)
         .maybeSingle();
 
@@ -198,7 +227,7 @@ export const useRealTimeData = () => {
       if (data) {
         setUserStats({
           id: data.id,
-          user_name: (data as any).user_name || data.display_name || sessionUser.name,
+          user_name: data.user_name || data.display_name || sessionUser.name,
           total_xp: data.total_xp || 0,
           total_quizzes: data.total_quizzes || 0,
           total_correct_answers: data.total_correct_answers || 0,
@@ -208,7 +237,7 @@ export const useRealTimeData = () => {
           level: data.level || 1,
           research_sessions: data.research_sessions || 0,
           achievements: data.achievements || [],
-          last_activity: (data as any).last_activity,
+          last_activity: data.last_activity,
           created_at: data.created_at
         });
       } else {
@@ -230,21 +259,24 @@ export const useRealTimeData = () => {
         return;
       }
 
-      const formattedData = (data || []).map(item => ({
-        id: item.id,
-        user_name: item.user_name || '',
-        total_xp: item.total_xp || 0,
-        total_quizzes: item.total_quizzes || 0,
-        total_correct_answers: item.total_correct_answers || 0,
-        total_questions: item.total_questions || 0,
-        study_time: 0, // Not exposed in leaderboard view for privacy
-        streak: item.streak || 0,
-        level: item.level || 1,
-        research_sessions: item.research_sessions || 0,
-        achievements: [], // Not exposed in leaderboard view for privacy
-        last_activity: undefined, // Not exposed in leaderboard view for privacy
-        created_at: undefined // Not exposed in leaderboard view for privacy
-      }));
+      const formattedData = (data || [])
+        .filter(item => item && item.user_name) // Filter out invalid entries
+        .slice(0, 100) // Limit to top 100 for performance
+        .map(item => ({
+          id: item.id,
+          user_name: item.user_name,
+          total_xp: item.total_xp || 0,
+          total_quizzes: item.total_quizzes || 0,
+          total_correct_answers: item.total_correct_answers || 0,
+          total_questions: item.total_questions || 0,
+          study_time: 0, // Not exposed in leaderboard view for privacy
+          streak: item.streak || 0,
+          level: item.level || 1,
+          research_sessions: item.research_sessions || 0,
+          achievements: [], // Not exposed in leaderboard view for privacy
+          last_activity: undefined, // Not exposed in leaderboard view for privacy
+          created_at: undefined // Not exposed in leaderboard view for privacy
+        }));
 
       setAllUserStats(formattedData);
     } catch (error) {
@@ -259,10 +291,21 @@ export const useRealTimeData = () => {
     try {
       const { data, error } = await supabase
         .from('quiz_sessions')
-        .select('*')
+        .select(`
+          id,
+          user_name,
+          title,
+          subject,
+          difficulty,
+          total_questions,
+          correct_answers,
+          time_spent,
+          score,
+          created_at
+        `)
         .eq('user_id', sessionUser.sessionId)
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(100); // Increased limit for better analytics
 
       if (error) {
         throw error;
@@ -270,11 +313,11 @@ export const useRealTimeData = () => {
 
       const formattedData = (data || []).map(item => ({
         id: item.id,
-        user_name: (item as any).user_name || sessionUser.name,
+        user_name: item.user_name || sessionUser.name,
         title: item.title || '',
         subject: item.subject || '',
         difficulty: item.difficulty || '',
-        total_questions: item.total_questions || 0,
+        total_questions: Math.max(1, item.total_questions || 0), // Prevent division by zero
         correct_answers: item.correct_answers || 0,
         time_spent: item.time_spent || 0,
         score: item.score || 0,

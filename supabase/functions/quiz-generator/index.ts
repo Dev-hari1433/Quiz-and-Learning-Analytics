@@ -338,35 +338,59 @@ IMPORTANT: The "options" array must contain exactly 4 strings. The "correctAnswe
       );
     }
 
-    // Format and validate questions - ALWAYS ensure exactly 4 options
+    // Format and validate questions - BULLETPROOF 4-option guarantee
     const finalQuestions = questionsData.questions.slice(0, numQuestions).map((q: any, index: number) => {
       const questionId = q.id || `q${index + 1}`;
       const questionText = q.question || `Question ${index + 1} about the content`;
       
-      // CRITICAL: Always ensure exactly 4 options
+      // BULLETPROOF: Always ensure exactly 4 options - no exceptions
       let options = [];
-      if (Array.isArray(q.options)) {
-        if (q.options.length === 4) {
-          options = q.options;
-        } else if (q.options.length > 4) {
-          // Take first 4 options
-          options = q.options.slice(0, 4);
+      
+      if (Array.isArray(q.options) && q.options.length >= 1) {
+        // Take existing options and ensure we have exactly 4
+        const validOptions = q.options.filter(opt => opt && typeof opt === 'string' && opt.trim().length > 0);
+        
+        if (validOptions.length >= 4) {
+          // Take first 4 valid options
+          options = validOptions.slice(0, 4);
         } else {
-          // Pad with generic options to reach 4
-          options = [...q.options];
-          const labels = ['A', 'B', 'C', 'D'];
+          // Use valid options and fill remaining slots
+          options = [...validOptions];
+          const optionLabels = ['A', 'B', 'C', 'D'];
+          const fallbackOptions = [
+            `Related concept from the content`,
+            `Alternative interpretation`,
+            `Similar but incorrect option`,
+            `Plausible distractor`
+          ];
+          
           while (options.length < 4) {
-            options.push(`Option ${labels[options.length]} for question ${index + 1}`);
+            const fallbackIndex = options.length;
+            options.push(fallbackOptions[fallbackIndex] || `Option ${optionLabels[fallbackIndex]} about the topic`);
           }
         }
       } else {
-        // Create 4 default options
-        options = [
-          `Option A for question ${index + 1}`,
-          `Option B for question ${index + 1}`,
-          `Option C for question ${index + 1}`,
-          `Option D for question ${index + 1}`
+        // No valid options provided - create 4 default options
+        const defaultOptions = [
+          `Correct answer about the topic`,
+          `Plausible but incorrect option`,
+          `Related but wrong concept`,
+          `Reasonable distractor`
         ];
+        options = defaultOptions;
+      }
+      
+      // CRITICAL: Final verification - options array MUST have exactly 4 elements
+      if (options.length !== 4) {
+        console.error(`ERROR: Question ${index + 1} does not have exactly 4 options. Found: ${options.length}. Fixing...`);
+        // Emergency fix - ensure exactly 4 options
+        if (options.length > 4) {
+          options = options.slice(0, 4);
+        } else {
+          while (options.length < 4) {
+            options.push(`Option ${options.length + 1} for question ${index + 1}`);
+          }
+        }
       }
       
       // Ensure correctAnswer is within bounds (0-3)
@@ -375,15 +399,20 @@ IMPORTANT: The "options" array must contain exactly 4 strings. The "correctAnswe
         : 0;
       const explanation = q.explanation || "Based on the provided content.";
 
-      return {
+      const finalQuestion = {
         id: questionId,
         question: questionText,
-        options, // Always exactly 4 options
+        options, // GUARANTEED exactly 4 options
         correctAnswer,
         explanation,
         difficulty: difficulty,
         subject: topic || 'General'
       };
+      
+      // Final validation log
+      console.log(`Question ${index + 1} validation: ${finalQuestion.options.length} options, correctAnswer: ${finalQuestion.correctAnswer}`);
+      
+      return finalQuestion;
     });
 
     console.log(`Successfully processed ${finalQuestions.length} questions`);

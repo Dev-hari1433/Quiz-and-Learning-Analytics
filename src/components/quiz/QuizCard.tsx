@@ -115,9 +115,10 @@ export const QuizCard: React.FC<QuizCardProps> = ({
               {/* Options */}
               <div className="space-y-4">
                 <AnimatePresence>
-                  {question.options.map((option, index) => (
+                  {/* GUARANTEE: Always render exactly 4 options */}
+                  {(question.options || []).slice(0, 4).map((option, index) => (
                     <motion.div
-                      key={index}
+                      key={`option-${index}`}
                       className={getOptionStyle(index)}
                       onClick={() => handleAnswer(index)}
                       whileHover={{ scale: 1.02 }}
@@ -130,7 +131,7 @@ export const QuizCard: React.FC<QuizCardProps> = ({
                         <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm font-bold">
                           {String.fromCharCode(65 + index)}
                         </div>
-                        <span className="flex-1">{option}</span>
+                        <span className="flex-1">{option || `Option ${String.fromCharCode(65 + index)}`}</span>
                         {showResult && (
                           <motion.div
                             initial={{ scale: 0 }}
@@ -147,6 +148,45 @@ export const QuizCard: React.FC<QuizCardProps> = ({
                       </div>
                     </motion.div>
                   ))}
+                  
+                  {/* Emergency fallback: If somehow less than 4 options, add placeholders */}
+                  {question.options && question.options.length < 4 && 
+                    Array.from({ length: 4 - question.options.length }, (_, index) => {
+                      const optionIndex = question.options.length + index;
+                      return (
+                        <motion.div
+                          key={`fallback-option-${optionIndex}`}
+                          className={getOptionStyle(optionIndex)}
+                          onClick={() => handleAnswer(optionIndex)}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: optionIndex * 0.1 + 0.3 }}
+                        >
+                          <div className="p-4 flex items-center space-x-3">
+                            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm font-bold">
+                              {String.fromCharCode(65 + optionIndex)}
+                            </div>
+                            <span className="flex-1">Option {String.fromCharCode(65 + optionIndex)}</span>
+                            {showResult && (
+                              <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ delay: 0.2 }}
+                              >
+                                {optionIndex === question.correctAnswer ? (
+                                  <Check className="w-6 h-6 text-accent" />
+                                ) : optionIndex === selectedOption ? (
+                                  <X className="w-6 h-6 text-destructive" />
+                                ) : null}
+                              </motion.div>
+                            )}
+                          </div>
+                        </motion.div>
+                      );
+                    })
+                  }
                 </AnimatePresence>
               </div>
             </div>
