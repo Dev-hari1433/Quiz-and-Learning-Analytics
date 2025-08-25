@@ -1,7 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Search, BookOpen, Globe, Lightbulb } from 'lucide-react';
+import { Search, BookOpen, Globe, Lightbulb, Brain } from 'lucide-react';
 import { GeminiSearchInterface } from '@/components/research/GeminiSearchInterface';
+import { PerplexitySearchInterface } from '@/components/research/PerplexitySearchInterface';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const SmartResearch = () => {
   return (
@@ -25,7 +27,26 @@ const SmartResearch = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          <GeminiSearchInterface />
+          <Tabs defaultValue="perplexity" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 gaming-card mb-6">
+              <TabsTrigger value="perplexity" className="flex items-center gap-2">
+                <Globe className="w-4 h-4" />
+                Perplexity AI
+              </TabsTrigger>
+              <TabsTrigger value="gemini" className="flex items-center gap-2">
+                <Brain className="w-4 h-4" />
+                Google Gemini
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="perplexity">
+              <PerplexitySearchInterface />
+            </TabsContent>
+
+            <TabsContent value="gemini">
+              <GeminiSearchInterface />
+            </TabsContent>
+          </Tabs>
         </motion.div>
 
         {/* Features Overview */}

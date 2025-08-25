@@ -1,17 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Brain, Home, RotateCcw } from 'lucide-react';
+import { Brain, Home, RotateCcw, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { QuizCard } from '@/components/quiz/QuizCard';
+import { QuizReview } from '@/components/quiz/QuizReview';
 import { XPBar } from '@/components/gaming/XPBar';
 import { useNavigate } from 'react-router-dom';
+import { GameStateManager, QuizAnswer } from '@/lib/gameState';
 
 const Quiz = () => {
   const navigate = useNavigate();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
-  const [xp, setXp] = useState(2840);
   const [showResults, setShowResults] = useState(false);
+  const [showReview, setShowReview] = useState(false);
+  const [quizAnswers, setQuizAnswers] = useState<QuizAnswer[]>([]);
+  const [gameState, setGameState] = useState(GameStateManager.getInstance().getState());
+
+  useEffect(() => {
+    const unsubscribe = GameStateManager.getInstance().subscribe(setGameState);
+    return unsubscribe;
+  }, []);
 
   // Sample quiz questions
   const questions = [
@@ -54,15 +63,40 @@ const Quiz = () => {
   ];
 
   const handleAnswer = (isCorrect: boolean, selectedOption: number) => {
+    const currentQ = questions[currentQuestion];
+    
+    // Store the answer for review
+    const answer: QuizAnswer = {
+      questionId: currentQ.id,
+      question: currentQ.question,
+      selectedAnswer: selectedOption,
+      correctAnswer: currentQ.correctAnswer,
+      options: currentQ.options,
+      isCorrect,
+      timeSpent: 30 // You can track actual time spent
+    };
+    
+    setQuizAnswers(prev => [...prev, answer]);
+    
     if (isCorrect) {
       setScore(score + 1);
-      setXp(xp + 10);
     }
 
     setTimeout(() => {
       if (currentQuestion < questions.length - 1) {
         setCurrentQuestion(currentQuestion + 1);
       } else {
+        // Save quiz results to game state
+        GameStateManager.getInstance().addQuizResult({
+          title: 'Practice Quiz',
+          score: Math.round(((score + (isCorrect ? 1 : 0)) / questions.length) * 100),
+          totalQuestions: questions.length,
+          correctAnswers: score + (isCorrect ? 1 : 0),
+          timeSpent: 30 * questions.length / 60, // Convert to minutes
+          subject: 'General Knowledge',
+          difficulty: 'medium',
+          answers: [...quizAnswers, answer]
+        });
         setShowResults(true);
       }
     }, 2000);
@@ -72,10 +106,24 @@ const Quiz = () => {
     setCurrentQuestion(0);
     setScore(0);
     setShowResults(false);
+    setShowReview(false);
+    setQuizAnswers([]);
   };
 
+  // Show Review Screen
+  if (showReview) {
+    return (
+      <QuizReview
+        answers={quizAnswers}
+        onClose={() => setShowReview(false)}
+        onRetry={resetQuiz}
+        onHome={() => navigate('/dashboard')}
+      />
+    );
+  }
+
   if (showResults) {
-    const percentage = (score / questions.length) * 100;
+    const percentage = Math.round((score / questions.length) * 100);
     const getGrade = () => {
       if (percentage >= 90) return { grade: 'A+', message: 'Outstanding! 🏆', color: 'text-xp-gold' };
       if (percentage >= 80) return { grade: 'A', message: 'Excellent work! 🌟', color: 'text-accent' };
@@ -155,17 +203,24 @@ const Quiz = () => {
             >
               <Button 
                 className="gaming-button-primary"
+                onClick={() => setShowReview(true)}
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                Review Answers
+              </Button>
+              <Button 
+                className="gaming-button-secondary"
                 onClick={resetQuiz}
               >
                 <RotateCcw className="w-4 h-4 mr-2" />
                 Try Again
               </Button>
               <Button 
-                className="gaming-button-secondary"
+                variant="outline"
                 onClick={() => navigate('/dashboard')}
               >
                 <Home className="w-4 h-4 mr-2" />
-                Back to Dashboard
+                Dashboard
               </Button>
             </motion.div>
           </motion.div>
@@ -197,9 +252,9 @@ const Quiz = () => {
         {/* Progress Section */}
         <div className="mb-8 space-y-4">
           <XPBar 
-            currentXP={xp}
-            maxXP={3000}
-            level={12}
+            currentXP={gameState.totalXP}
+            maxXP={(gameState.level) * 1000}
+            level={gameState.level}
             className="max-w-2xl mx-auto"
           />
           

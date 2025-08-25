@@ -37,25 +37,25 @@ export const RealTimeDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [isLive, setIsLive] = useState(true);
   const [stats, setStats] = useState<RealTimeStats>({
-    currentXP: 2840,
-    maxXP: 3000,
-    level: 12,
+    currentXP: 0,
+    maxXP: 1000,
+    level: 1,
     todayXP: 0,
-    streak: 7,
-    totalQuizzes: 45,
-    correctAnswers: 38,
-    averageTime: "2.3m",
-    rank: 3,
+    streak: 0,
+    totalQuizzes: 0,
+    correctAnswers: 0,
+    averageTime: "0m",
+    rank: 100,
     activeLearners: 156,
     todayTime: 0,
     weeklyGoal: 0,
     monthlyGoal: 0,
-    currentAccuracy: 85,
-    recentPerformance: [85, 89, 92, 88, 94, 91, 87],
+    currentAccuracy: 0,
+    recentPerformance: [0, 0, 0, 0, 0, 0, 0],
     topSubjects: [
-      { name: 'Mathematics', score: 94, improvement: 8 },
-      { name: 'Science', score: 89, improvement: 12 },
-      { name: 'History', score: 92, improvement: 5 }
+      { name: 'Mathematics', score: 0, improvement: 0 },
+      { name: 'Science', score: 0, improvement: 0 },
+      { name: 'History', score: 0, improvement: 0 }
     ]
   });
 
@@ -199,7 +199,7 @@ export const RealTimeDashboard: React.FC = () => {
             icon={Zap}
             trend="up"
             trendValue="+12%"
-            color="xp-gold"
+            color="warning"
           />
           
           <StatsCard
@@ -207,7 +207,7 @@ export const RealTimeDashboard: React.FC = () => {
             value={`${stats.currentAccuracy}%`}
             subtitle={`${stats.correctAnswers}/${stats.totalQuizzes} correct`}
             icon={Target}
-            trend={getPerformanceTrend()}
+            trend={getPerformanceTrend() === 'stable' ? 'neutral' : getPerformanceTrend() as 'up' | 'down'}
             trendValue={`${getPerformanceTrend() === 'up' ? '+' : ''}${Math.floor(Math.random() * 5)}%`}
             color="accent"
           />
@@ -229,7 +229,7 @@ export const RealTimeDashboard: React.FC = () => {
             icon={Clock}
             trend="up"
             trendValue="+15m this hour"
-            color="info"
+            color="secondary"
           />
           
           <StatsCard
