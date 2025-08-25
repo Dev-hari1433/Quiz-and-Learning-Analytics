@@ -14,7 +14,135 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      quiz_sessions: {
+        Row: {
+          answers: Json
+          correct_answers: number
+          created_at: string
+          difficulty: string
+          id: string
+          score: number
+          subject: string
+          time_spent: number
+          title: string
+          total_questions: number
+          user_id: string | null
+        }
+        Insert: {
+          answers?: Json
+          correct_answers: number
+          created_at?: string
+          difficulty: string
+          id?: string
+          score: number
+          subject: string
+          time_spent: number
+          title: string
+          total_questions: number
+          user_id?: string | null
+        }
+        Update: {
+          answers?: Json
+          correct_answers?: number
+          created_at?: string
+          difficulty?: string
+          id?: string
+          score?: number
+          subject?: string
+          time_spent?: number
+          title?: string
+          total_questions?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      research_activities: {
+        Row: {
+          activity_type: string
+          analysis_text: string | null
+          created_at: string
+          id: string
+          query_text: string | null
+          results_count: number | null
+          time_spent: number
+          user_id: string | null
+        }
+        Insert: {
+          activity_type: string
+          analysis_text?: string | null
+          created_at?: string
+          id?: string
+          query_text?: string | null
+          results_count?: number | null
+          time_spent: number
+          user_id?: string | null
+        }
+        Update: {
+          activity_type?: string
+          analysis_text?: string | null
+          created_at?: string
+          id?: string
+          query_text?: string | null
+          results_count?: number | null
+          time_spent?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          achievements: string[] | null
+          created_at: string
+          display_name: string | null
+          id: string
+          level: number | null
+          quiz_history: Json | null
+          research_sessions: number | null
+          streak: number | null
+          study_time: number | null
+          total_correct_answers: number | null
+          total_questions: number | null
+          total_quizzes: number | null
+          total_xp: number | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          achievements?: string[] | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          level?: number | null
+          quiz_history?: Json | null
+          research_sessions?: number | null
+          streak?: number | null
+          study_time?: number | null
+          total_correct_answers?: number | null
+          total_questions?: number | null
+          total_quizzes?: number | null
+          total_xp?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          achievements?: string[] | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          level?: number | null
+          quiz_history?: Json | null
+          research_sessions?: number | null
+          streak?: number | null
+          study_time?: number | null
+          total_correct_answers?: number | null
+          total_questions?: number | null
+          total_quizzes?: number | null
+          total_xp?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
