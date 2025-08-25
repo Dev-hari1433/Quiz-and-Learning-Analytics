@@ -206,6 +206,7 @@ export const useRealTimeData = () => {
         .from('quiz_sessions')
         .insert({
           ...quizData,
+          user_id: sessionUser.sessionId,
           user_name: sessionUser.name
         });
 
@@ -229,6 +230,7 @@ export const useRealTimeData = () => {
         .from('research_activities')
         .insert({
           ...researchData,
+          user_id: sessionUser.sessionId,
           user_name: sessionUser.name
         });
 
@@ -260,6 +262,9 @@ export const useRealTimeData = () => {
 
       const xpGained = quizData.correct_answers * 10 + (quizData.score >= 80 ? 20 : 0);
       const newStats = existing ? {
+        display_name: sessionUser.name,
+        user_name: sessionUser.name, 
+        user_id: sessionUser.sessionId,
         total_xp: (existing.total_xp || 0) + xpGained,
         total_quizzes: (existing.total_quizzes || 0) + 1,
         total_correct_answers: (existing.total_correct_answers || 0) + quizData.correct_answers,
@@ -270,6 +275,8 @@ export const useRealTimeData = () => {
         research_sessions: existing.research_sessions || 0,
         achievements: updateAchievements(existing, quizData, xpGained)
       } : {
+        user_id: sessionUser.sessionId,
+        display_name: sessionUser.name,
         user_name: sessionUser.name,
         total_xp: xpGained,
         total_quizzes: 1,
@@ -284,7 +291,7 @@ export const useRealTimeData = () => {
 
       const { error } = existing
         ? await supabase.from('user_profiles').update(newStats).eq('display_name', sessionUser.name)
-        : await supabase.from('user_profiles').insert(newStats);
+        : await supabase.from('user_profiles').insert({ ...newStats });
 
       if (error) throw error;
     } catch (error) {

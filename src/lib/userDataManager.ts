@@ -4,6 +4,8 @@ import { GameStateManager, QuizResult } from '@/lib/gameState';
 interface UserProfile {
   id: string;
   user_id: string;
+  display_name: string;
+  user_name: string;
   total_xp: number;
   total_quizzes: number;
   total_correct_answers: number;
@@ -11,9 +13,11 @@ interface UserProfile {
   study_time: number;
   streak: number;
   level: number;
-  quiz_history: any;
   research_sessions: number;
   achievements: string[];
+  last_activity: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 class UserDataManager {
@@ -45,6 +49,8 @@ class UserDataManager {
           .from('user_profiles')
           .insert({
             user_id: userId,
+            display_name: userId,
+            user_name: userId,
             total_xp: 0,
             total_quizzes: 0,
             total_correct_answers: 0,
@@ -52,7 +58,6 @@ class UserDataManager {
             study_time: 0,
             streak: 0,
             level: 1,
-            quiz_history: [],
             research_sessions: 0,
             achievements: []
           });
@@ -77,14 +82,14 @@ class UserDataManager {
         .from('quiz_sessions')
         .insert({
           user_id: userId,
+          user_name: userId,
           title: quizResult.title,
           subject: quizResult.subject,
           difficulty: quizResult.difficulty,
           total_questions: quizResult.totalQuestions,
           correct_answers: quizResult.correctAnswers,
           time_spent: quizResult.timeSpent,
-          score: (quizResult.correctAnswers / quizResult.totalQuestions) * 100,
-          answers: quizResult.answers as any
+          score: (quizResult.correctAnswers / quizResult.totalQuestions) * 100
         });
 
       if (quizError) {
@@ -111,9 +116,9 @@ class UserDataManager {
         .from('research_activities')
         .insert({
           user_id: userId,
+          user_name: userId,
           activity_type: activityType,
           query_text: queryText,
-          analysis_text: analysisText,
           time_spent: timeSpent,
           results_count: resultsCount
         });
@@ -160,7 +165,6 @@ class UserDataManager {
           study_time: gameState.studyTime,
           streak: gameState.streak,
           level: gameState.level,
-          quiz_history: gameState.quizHistory as any,
           achievements: gameState.achievements
         })
         .eq('user_id', userId);

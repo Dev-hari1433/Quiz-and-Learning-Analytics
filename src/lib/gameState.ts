@@ -108,6 +108,8 @@ class GameStateManager {
 
       const profileData = {
         user_id: user.id,
+        display_name: user.email || user.id,
+        user_name: user.email || user.id,
         total_xp: this.state.totalXP,
         total_quizzes: this.state.totalQuizzes,
         total_correct_answers: this.state.totalCorrectAnswers,
@@ -115,7 +117,7 @@ class GameStateManager {
         study_time: this.state.studyTime,
         streak: this.state.streak,
         level: this.state.level,
-        quiz_history: JSON.stringify(this.state.quizHistory) as any,
+        research_sessions: 0,
         achievements: this.state.achievements
       };
 
@@ -150,12 +152,6 @@ class GameStateManager {
       }
 
       if (profile) {
-        const quizHistory = typeof profile.quiz_history === 'string' 
-          ? JSON.parse(profile.quiz_history) 
-          : Array.isArray(profile.quiz_history) 
-            ? profile.quiz_history 
-            : [];
-
         this.state = {
           totalXP: profile.total_xp || 0,
           totalQuizzes: profile.total_quizzes || 0,
@@ -165,10 +161,7 @@ class GameStateManager {
           streak: profile.streak || 0,
           level: profile.level || 1,
           achievements: profile.achievements || [],
-          quizHistory: quizHistory.map((quiz: any) => ({
-            ...quiz,
-            timestamp: new Date(quiz.timestamp)
-          })),
+          quizHistory: [], // Will be loaded separately from quiz_sessions
           lastUpdated: new Date()
         };
         this.notifyListeners();
@@ -257,14 +250,14 @@ class GameStateManager {
         .from('quiz_sessions')
         .insert({
           user_id: user.id,
+          user_name: user.email || user.id,
           title: quiz.title,
           subject: quiz.subject,
           difficulty: quiz.difficulty,
           total_questions: quiz.totalQuestions,
           correct_answers: quiz.correctAnswers,
           time_spent: quiz.timeSpent,
-          score: quiz.score,
-          answers: JSON.stringify(quiz.answers) as any
+          score: quiz.score
         });
 
       if (error) {
@@ -320,9 +313,9 @@ class GameStateManager {
         .from('research_activities')
         .insert({
           user_id: user.id,
+          user_name: user.email || user.id,
           activity_type: type,
           query_text: query,
-          analysis_text: analysisText,
           time_spent: timeSpent,
           results_count: resultsCount
         });
