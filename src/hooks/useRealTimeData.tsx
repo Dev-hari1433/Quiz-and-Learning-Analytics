@@ -554,6 +554,26 @@ export const useRealTimeData = () => {
     return achievements;
   };
 
+  const evaluateAchievements = async (userId: string, userName: string) => {
+    try {
+      const { data, error } = await supabase
+        .rpc('evaluate_achievements', {
+          p_user_id: userId,
+          p_user_name: userName
+        });
+
+      if (error) {
+        console.error('Error evaluating achievements:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error evaluating achievements:', error);
+      return [];
+    }
+  };
+
   return {
     userStats,
     allUserStats,
@@ -563,6 +583,7 @@ export const useRealTimeData = () => {
     error,
     saveQuizResult,
     saveResearchActivity,
+    evaluateAchievements,
     refreshData: () => {
       loadInitialData();
     }

@@ -87,11 +87,31 @@ export const useRealTimeSubscriptions = () => {
         )
         .subscribe();
 
+      // Subscribe to user achievement changes  
+      const achievementSubscription = supabase
+        .channel('user_achievements_changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'user_achievements',
+            filter: `user_id=eq.${sessionUser.sessionId}`
+          },
+          (payload) => {
+            console.log('Achievement updated:', payload);
+            // Trigger a refresh of achievement data
+            window.dispatchEvent(new CustomEvent('achievementUpdated', { detail: payload }));
+          }
+        )
+        .subscribe();
+
       newSubscriptions.push(
         profileSubscription,
         quizSubscription,
         researchSubscription,
-        leaderboardSubscription
+        leaderboardSubscription,
+        achievementSubscription
       );
 
       setSubscriptions(newSubscriptions);

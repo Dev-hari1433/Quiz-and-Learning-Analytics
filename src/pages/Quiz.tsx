@@ -8,6 +8,7 @@ import { XPBar } from '@/components/gaming/XPBar';
 import { useNavigate } from 'react-router-dom';
 import { GameStateManager, QuizAnswer } from '@/lib/gameState';
 import { useRealTimeData } from '@/hooks/useRealTimeData';
+import { AchievementNotification } from '@/components/achievements/AchievementNotification';
 import { useSessionUser } from '@/hooks/useSessionUser';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -19,7 +20,8 @@ const Quiz = () => {
   const [showReview, setShowReview] = useState(false);
   const [quizAnswers, setQuizAnswers] = useState<QuizAnswer[]>([]);
   const [gameState, setGameState] = useState(GameStateManager.getInstance().getState());
-  const { saveQuizResult } = useRealTimeData();
+  const [newAchievements, setNewAchievements] = useState<any[]>([]);
+  const { saveQuizResult, evaluateAchievements } = useRealTimeData();
   const { sessionUser } = useSessionUser();
 
   useEffect(() => {
@@ -131,6 +133,12 @@ const Quiz = () => {
           const quizSessionId = await saveQuizResult(quizData);
           if (quizSessionId) {
             await saveDetailedQuizResults(finalAnswers, quizSessionId);
+            
+            // Evaluate achievements after quiz completion
+            const achievements = await evaluateAchievements(sessionUser.sessionId, sessionUser.name);
+            if (achievements && achievements.length > 0) {
+              setNewAchievements(achievements);
+            }
           }
         }
         setShowResults(true);
@@ -298,6 +306,14 @@ const Quiz = () => {
 
   return (
     <div className="min-h-screen bg-background p-6">
+      {/* Achievement Notifications */}
+      {newAchievements.length > 0 && (
+        <AchievementNotification
+          achievements={newAchievements}
+          onClose={() => setNewAchievements([])}
+        />
+      )}
+      
       <div className="max-w-4xl mx-auto">
         
         {/* Header */}
