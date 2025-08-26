@@ -135,7 +135,7 @@ const Quiz = () => {
             await saveDetailedQuizResults(finalAnswers, quizSessionId);
             
             // Evaluate achievements after quiz completion
-            const achievements = await evaluateAchievements(sessionUser.sessionId, sessionUser.name);
+            const achievements = await evaluateAchievements(sessionUser.name);
             if (achievements && achievements.length > 0) {
               setNewAchievements(achievements);
             }

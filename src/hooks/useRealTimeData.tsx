@@ -554,11 +554,10 @@ export const useRealTimeData = () => {
     return achievements;
   };
 
-  const evaluateAchievements = async (userId: string, userName: string) => {
+  const evaluateAchievements = async (userName: string) => {
     try {
       const { data, error } = await supabase
         .rpc('evaluate_achievements', {
-          p_user_id: userId,
           p_user_name: userName
         });
 
