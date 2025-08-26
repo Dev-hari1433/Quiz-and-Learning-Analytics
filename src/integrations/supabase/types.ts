@@ -140,6 +140,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_achievements: {
+        Row: {
+          achievement_name: string
+          achievement_type: string
+          description: string
+          id: string
+          metadata: Json | null
+          points_earned: number
+          unlocked_at: string
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          achievement_name: string
+          achievement_type: string
+          description: string
+          id?: string
+          metadata?: Json | null
+          points_earned?: number
+          unlocked_at?: string
+          user_id: string
+          user_name: string
+        }
+        Update: {
+          achievement_name?: string
+          achievement_type?: string
+          description?: string
+          id?: string
+          metadata?: Json | null
+          points_earned?: number
+          unlocked_at?: string
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           achievements: string[]
@@ -216,6 +252,20 @@ export type Database = {
       }
     }
     Functions: {
+      evaluate_achievements: {
+        Args: { p_user_id: string; p_user_name: string }
+        Returns: {
+          achievement_name: string
+          achievement_type: string
+          description: string
+          id: string
+          metadata: Json | null
+          points_earned: number
+          unlocked_at: string
+          user_id: string
+          user_name: string
+        }[]
+      }
       get_leaderboard_stats: {
         Args: Record<PropertyKey, never>
         Returns: {
