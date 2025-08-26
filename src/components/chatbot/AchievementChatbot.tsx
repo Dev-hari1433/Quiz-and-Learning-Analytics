@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, X, Send, Bot, User } from 'lucide-react';
+import { MessageCircle, X, Send, Bot, User, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Message {
   id: string;
@@ -27,10 +28,11 @@ interface AchievementChatbotProps {
 
 const AchievementChatbot: React.FC<AchievementChatbotProps> = ({ userStats }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: "Hi! I'm your Achievement Assistant. Ask me about badges, progress, or how to unlock new achievements! 🏆",
+      text: "Hi! I'm your AI assistant. I can help with achievements, study tips, or answer any questions you have! 🤖",
       isBot: true,
       timestamp: new Date()
     }
@@ -46,76 +48,33 @@ const AchievementChatbot: React.FC<AchievementChatbotProps> = ({ userStats }) =>
     scrollToBottom();
   }, [messages]);
 
-  const generateResponse = (userMessage: string): string => {
-    const message = userMessage.toLowerCase();
-    
-    // Achievement-specific responses
-    if (message.includes('badge') || message.includes('achievement')) {
-      return `You currently have ${userStats?.level || 1} level and ${userStats?.totalXP || 0} XP! Keep completing quizzes to unlock more badges. Focus on accuracy and consistency to earn rare achievements! 🎯`;
-    }
-    
-    if (message.includes('streak')) {
-      const streak = userStats?.streak || 0;
-      if (streak >= 7) {
-        return `Amazing! You have a ${streak}-day streak! 🔥 You've already unlocked the Consistent Learner badge. Keep it up!`;
-      } else {
-        return `You currently have a ${streak}-day streak. Reach 7 days to unlock the Consistent Learner badge! Study daily to maintain your momentum! 📚`;
+  const generateAIResponse = async (userMessage: string): Promise<string> => {
+    try {
+      setIsLoading(true);
+      
+      const { data, error } = await supabase.functions.invoke('ai-chat', {
+        body: {
+          message: userMessage,
+          context: userStats
+        }
+      });
+
+      if (error) {
+        console.error('Error calling AI chat function:', error);
+        return "I'm having trouble connecting right now. Please try again in a moment!";
       }
+
+      return data?.response || "I couldn't generate a response. Please try again!";
+    } catch (error) {
+      console.error('Error in AI response:', error);
+      return "Something went wrong. Please try asking your question again!";
+    } finally {
+      setIsLoading(false);
     }
-    
-    if (message.includes('level') || message.includes('xp')) {
-      const level = userStats?.level || 1;
-      const xp = userStats?.totalXP || 0;
-      return `You're currently level ${level} with ${xp} XP! Complete more quizzes to gain XP and level up. Each quiz gives you XP based on your performance! ⚡`;
-    }
-    
-    if (message.includes('perfect') || message.includes('100%')) {
-      const perfectScores = userStats?.perfectScores || 0;
-      return `You have ${perfectScores} perfect scores! Get 3 perfect scores to unlock the "Perfect Score" achievement. Take your time and read questions carefully! ⭐`;
-    }
-    
-    if (message.includes('speed') || message.includes('fast')) {
-      return `To unlock the Speed Demon badge, maintain an average response time under 5 seconds! Practice with easier topics first to build speed, then tackle harder questions! 🚀`;
-    }
-    
-    if (message.includes('subject') || message.includes('topic')) {
-      const subjects = userStats?.subjectsCompleted || 0;
-      return `You've completed quizzes in ${subjects} different subjects! Complete quizzes in 5 different subjects to unlock the Subject Explorer badge! 🌟`;
-    }
-    
-    if (message.includes('accuracy') || message.includes('score')) {
-      const accuracy = userStats?.averageScore || 0;
-      return `Your current accuracy is ${accuracy}%. Maintain 80%+ accuracy over 20 quizzes to unlock the High Achiever badge! Focus on understanding rather than speed! 🎯`;
-    }
-    
-    if (message.includes('help') || message.includes('how')) {
-      return `Here are some tips: 📝\n• Study daily to maintain streaks\n• Read questions carefully for accuracy\n• Try different subjects for variety\n• Practice regularly to improve speed\n• Aim for perfect scores when possible!`;
-    }
-    
-    if (message.includes('tip') || message.includes('advice')) {
-      const tips = [
-        "Focus on accuracy over speed - many badges require high accuracy! 🎯",
-        "Study daily to build your streak - even 10 minutes counts! 🔥",
-        "Try quizzes in different subjects to unlock the Subject Explorer badge! 📚",
-        "Take your time on harder questions to maintain your accuracy! ⏰",
-        "Review your mistakes to improve your performance! 📈"
-      ];
-      return tips[Math.floor(Math.random() * tips.length)];
-    }
-    
-    // Default responses
-    const responses = [
-      "That's a great question! For specific achievement tips, try asking about badges, streaks, or accuracy! 🤔",
-      "I'm here to help with achievements! Ask me about unlocking badges, improving your level, or building streaks! 🏆",
-      "Need help with a specific achievement? Ask me about perfect scores, speed, subjects, or your current progress! 💪",
-      "I can help you understand how to unlock different badges! What specific achievement are you working towards? 🎯"
-    ];
-    
-    return responses[Math.floor(Math.random() * responses.length)];
   };
 
-  const handleSendMessage = () => {
-    if (!inputValue.trim()) return;
+  const handleSendMessage = async () => {
+    if (!inputValue.trim() || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -125,22 +84,24 @@ const AchievementChatbot: React.FC<AchievementChatbotProps> = ({ userStats }) =>
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = inputValue;
     setInputValue('');
 
-    // Simulate bot thinking delay
-    setTimeout(() => {
-      const botResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        text: generateResponse(inputValue),
-        isBot: true,
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, botResponse]);
-    }, 500);
+    // Get AI response
+    const aiResponse = await generateAIResponse(currentInput);
+    
+    const botResponse: Message = {
+      id: (Date.now() + 1).toString(),
+      text: aiResponse,
+      isBot: true,
+      timestamp: new Date()
+    };
+    
+    setMessages(prev => [...prev, botResponse]);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !isLoading) {
       handleSendMessage();
     }
   };
@@ -177,7 +138,8 @@ const AchievementChatbot: React.FC<AchievementChatbotProps> = ({ userStats }) =>
             <div className="flex items-center justify-between p-4 bg-primary text-primary-foreground">
               <div className="flex items-center gap-2">
                 <Bot className="w-5 h-5" />
-                <span className="font-semibold">Achievement Assistant</span>
+                <span className="font-semibold">AI Assistant</span>
+                {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
               </div>
               <Button
                 onClick={() => setIsOpen(false)}
@@ -225,11 +187,12 @@ const AchievementChatbot: React.FC<AchievementChatbotProps> = ({ userStats }) =>
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="Ask about achievements..."
+                  placeholder={isLoading ? "AI is thinking..." : "Ask me anything..."}
                   className="flex-1"
+                  disabled={isLoading}
                 />
-                <Button onClick={handleSendMessage} size="icon">
-                  <Send className="w-4 h-4" />
+                <Button onClick={handleSendMessage} size="icon" disabled={isLoading || !inputValue.trim()}>
+                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 </Button>
               </div>
             </div>
