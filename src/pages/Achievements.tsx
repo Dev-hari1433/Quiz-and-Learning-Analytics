@@ -4,6 +4,7 @@ import { Trophy, Star, Target, Zap, Award } from 'lucide-react';
 import { AchievementBadge } from '@/components/gaming/AchievementBadge';
 import { EnhancedBadgeSystem, EnhancedAchievement } from '@/components/achievements/EnhancedBadgeSystem';
 import { useRealTimeData } from '@/hooks/useRealTimeData';
+import AchievementChatbot from '@/components/chatbot/AchievementChatbot';
 
 const Achievements = () => {
   const { userStats, quizHistory, loading } = useRealTimeData();
@@ -263,6 +264,9 @@ const Achievements = () => {
             </div>
           </div>
         </motion.div>
+
+        {/* Achievement Chatbot */}
+        <AchievementChatbot userStats={badgeUserStats} />
       </div>
     </div>
   );
