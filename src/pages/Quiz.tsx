@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Brain, Home, RotateCcw, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { QuizCard } from '@/components/quiz/QuizCard';
+import { OptimizedQuizCard } from '@/components/performance/OptimizedQuizCard';
 import { QuizReview } from '@/components/quiz/QuizReview';
 import { XPBar } from '@/components/gaming/XPBar';
 import { useNavigate } from 'react-router-dom';
@@ -364,7 +364,7 @@ const Quiz = () => {
           exit={{ opacity: 0, x: -100 }}
           transition={{ duration: 0.5 }}
         >
-          <QuizCard
+          <OptimizedQuizCard
             question={questions[currentQuestion]}
             onAnswer={handleAnswer}
             timeLimit={30}

@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React, { memo, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, Brain, Clock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 interface QuizQuestion {
   id: string;
@@ -11,14 +10,14 @@ interface QuizQuestion {
   explanation?: string;
 }
 
-interface QuizCardProps {
+interface OptimizedQuizCardProps {
   question: QuizQuestion;
   onAnswer: (isCorrect: boolean, selectedOption: number) => void;
   timeLimit?: number;
   className?: string;
 }
 
-export const QuizCard: React.FC<QuizCardProps> = ({
+const OptimizedQuizCard: React.FC<OptimizedQuizCardProps> = memo(({
   question,
   onAnswer,
   timeLimit = 30,
@@ -34,11 +33,11 @@ export const QuizCard: React.FC<QuizCardProps> = ({
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
       return () => clearTimeout(timer);
     } else if (timeLeft === 0 && !showResult) {
-      handleAnswer(-1); // Auto-submit when time runs out
+      handleAnswer(-1);
     }
   }, [timeLeft, showResult]);
 
-  const handleAnswer = (optionIndex: number) => {
+  const handleAnswer = useCallback((optionIndex: number) => {
     if (showResult) return;
     
     setSelectedOption(optionIndex);
@@ -47,10 +46,10 @@ export const QuizCard: React.FC<QuizCardProps> = ({
     
     const isCorrect = optionIndex === question.correctAnswer;
     setTimeout(() => onAnswer(isCorrect, optionIndex), 1000);
-  };
+  }, [showResult, question.correctAnswer, onAnswer]);
 
-  const getOptionStyle = (index: number) => {
-    if (!showResult) return "gaming-card hover:bg-primary/10 cursor-pointer";
+  const getOptionStyle = useCallback((index: number) => {
+    if (!showResult) return "gaming-card hover:bg-primary/10 cursor-pointer transition-all duration-200";
     
     if (index === question.correctAnswer) {
       return "gaming-card bg-accent/20 border-accent text-accent-foreground";
@@ -58,7 +57,15 @@ export const QuizCard: React.FC<QuizCardProps> = ({
       return "gaming-card bg-destructive/20 border-destructive text-destructive-foreground";
     }
     return "gaming-card opacity-50";
-  };
+  }, [showResult, question.correctAnswer, selectedOption]);
+
+  // Ensure we always have exactly 4 options
+  const normalizedOptions = React.useMemo(() => {
+    const options = question.options || [];
+    return Array.from({ length: 4 }, (_, index) => 
+      options[index] || `Option ${String.fromCharCode(65 + index)}`
+    );
+  }, [question.options]);
 
   return (
     <div className={`flip-card w-full max-w-2xl mx-auto ${isFlipped ? 'flipped' : ''} ${className}`}>
@@ -71,7 +78,7 @@ export const QuizCard: React.FC<QuizCardProps> = ({
             animate={{ rotateY: 0 }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
                 <Brain className="w-6 h-6 text-primary neon-glow" />
                 <span className="text-lg font-bold">Quiz Challenge</span>
@@ -92,7 +99,7 @@ export const QuizCard: React.FC<QuizCardProps> = ({
             </div>
 
             {/* Progress Bar */}
-            <div className="w-full h-2 bg-muted rounded-full mb-6 overflow-hidden">
+            <div className="w-full h-2 bg-muted rounded-full mb-4 overflow-hidden">
               <motion.div
                 className="h-full bg-gradient-xp"
                 initial={{ width: '100%' }}
@@ -102,7 +109,7 @@ export const QuizCard: React.FC<QuizCardProps> = ({
             </div>
 
             {/* Question */}
-            <div className="flex-1 flex flex-col justify-center min-h-0">
+            <div className="flex-1 flex flex-col justify-center">
               <motion.h3
                 className="text-lg font-bold text-center mb-6 text-foreground leading-tight"
                 initial={{ opacity: 0, y: 20 }}
@@ -112,46 +119,41 @@ export const QuizCard: React.FC<QuizCardProps> = ({
                 {question.question}
               </motion.h3>
 
-              {/* Options - Fixed grid for 4 options */}
-              <div className="grid grid-cols-1 gap-3 auto-rows-fr">
-                {Array.from({ length: 4 }, (_, index) => {
-                  // Ensure we always have 4 valid options
-                  const allOptions = question.options || [];
-                  const option = allOptions[index] || `Missing Option ${String.fromCharCode(65 + index)}`;
-                  return (
-                    <motion.div
-                      key={`option-${index}`}
-                      className={getOptionStyle(index)}
-                      onClick={() => handleAnswer(index)}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 + 0.3 }}
-                    >
-                      <div className="p-3 flex items-center space-x-3">
-                        <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-sm font-bold flex-shrink-0">
-                          {String.fromCharCode(65 + index)}
-                        </div>
-                        <span className="flex-1 text-sm">{option}</span>
-                        {showResult && (
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ delay: 0.2 }}
-                            className="flex-shrink-0"
-                          >
-                            {index === question.correctAnswer ? (
-                              <Check className="w-5 h-5 text-accent" />
-                            ) : index === selectedOption ? (
-                              <X className="w-5 h-5 text-destructive" />
-                            ) : null}
-                          </motion.div>
-                        )}
+              {/* Options - Optimized grid */}
+              <div className="grid grid-cols-1 gap-3">
+                {normalizedOptions.map((option, index) => (
+                  <motion.div
+                    key={`option-${index}`}
+                    className={getOptionStyle(index)}
+                    onClick={() => handleAnswer(index)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 + 0.3 }}
+                  >
+                    <div className="p-3 flex items-center space-x-3">
+                      <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-sm font-bold flex-shrink-0">
+                        {String.fromCharCode(65 + index)}
                       </div>
-                    </motion.div>
-                  );
-                })}
+                      <span className="flex-1 text-sm">{option}</span>
+                      {showResult && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ delay: 0.2 }}
+                          className="flex-shrink-0"
+                        >
+                          {index === question.correctAnswer ? (
+                            <Check className="w-5 h-5 text-accent" />
+                          ) : index === selectedOption ? (
+                            <X className="w-5 h-5 text-destructive" />
+                          ) : null}
+                        </motion.div>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
               </div>
             </div>
           </motion.div>
@@ -188,7 +190,7 @@ export const QuizCard: React.FC<QuizCardProps> = ({
 
             {question.explanation && (
               <motion.div
-                className="mt-6 p-4 bg-muted/50 rounded-lg"
+                className="mt-6 p-4 bg-muted/50 rounded-lg max-w-md"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
@@ -202,4 +204,8 @@ export const QuizCard: React.FC<QuizCardProps> = ({
       </div>
     </div>
   );
-};
+});
+
+OptimizedQuizCard.displayName = 'OptimizedQuizCard';
+
+export { OptimizedQuizCard };
