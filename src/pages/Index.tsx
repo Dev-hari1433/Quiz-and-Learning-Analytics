@@ -199,8 +199,8 @@ const Index = () => {
         
         {/* Footer */}
         <Footer 
-          whatsappNumber="YOUR_WHATSAPP_NUMBER" 
-          instagramId="YOUR_INSTAGRAM_ID" 
+          whatsappNumber="8438614059" 
+          instagramId="chocolate_boy_hari1433" 
         />
         
       </div>
