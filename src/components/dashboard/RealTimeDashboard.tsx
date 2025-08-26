@@ -133,31 +133,31 @@ export const RealTimeDashboard: React.FC = () => {
   const achievements = [
     {
       type: 'gold' as const,
-      title: 'Quiz Master',
-      description: 'Complete 50 quizzes',
+      title: 'First Steps',
+      description: 'Complete your first quiz',
       icon: 'trophy' as const,
-      earned: true
+      earned: (userStats?.total_quizzes || 0) >= 1
     },
     {
       type: 'silver' as const,
-      title: 'Speed Demon',
-      description: 'Answer in under 10 seconds',
+      title: 'Speed Starter',
+      description: 'Average answer time under 15 seconds',
       icon: 'zap' as const,
-      earned: true
+      earned: (quizHistory.length > 0) && ((quizHistory.reduce((sum, q) => sum + ((q.time_spent || 0) / (q.total_questions || 1)), 0) / quizHistory.length) < 15)
     },
     {
       type: 'bronze' as const,
-      title: 'Consistent Learner',
-      description: 'Maintain 5-day streak',
+      title: 'Streak Builder',
+      description: 'Maintain a 3-day streak',
       icon: 'target' as const,
-      earned: true
+      earned: (userStats?.streak || 0) >= 3
     },
     {
       type: 'special' as const,
-      title: 'AI Whisperer',
-      description: 'Perfect score on AI topics',
+      title: 'High Accuracy',
+      description: 'Reach 80% accuracy',
       icon: 'star' as const,
-      earned: false
+      earned: ((userStats?.total_questions || 0) > 0) ? Math.round(((userStats?.total_correct_answers || 0) / (userStats?.total_questions || 1)) * 100) >= 80 : false
     }
   ];
 

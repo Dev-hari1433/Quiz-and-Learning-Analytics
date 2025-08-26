@@ -142,6 +142,7 @@ const Index = () => {
               <Button 
                 variant="outline"
                 className="gaming-card border-primary/30 hover:bg-primary/10 text-lg px-8 py-4 h-auto"
+                onClick={() => navigate('/generate-quiz')}
               >
                 Watch Demo
               </Button>
