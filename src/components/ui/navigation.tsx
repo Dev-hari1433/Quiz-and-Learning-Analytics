@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 interface NavItemProps {
@@ -7,7 +7,7 @@ interface NavItemProps {
   path: string;
 }
 
-const Navigation = () => {
+const Navigation = memo(() => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -20,6 +20,10 @@ const Navigation = () => {
     { icon: '🏆', label: 'Achievements', path: '/achievements' },
   ];
 
+  const handleNavigation = useCallback((path: string) => {
+    navigate(path);
+  }, [navigate]);
+
   return (
     <nav className="border-b border-border/20 bg-card/50 backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-6">
@@ -29,16 +33,18 @@ const Navigation = () => {
               key={item.path}
               {...item} 
               active={location.pathname === item.path}
-              onClick={() => navigate(item.path)}
+              onClick={() => handleNavigation(item.path)}
             />
           ))}
         </div>
       </div>
     </nav>
   );
-};
+});
 
-const NavItem = ({ icon, label, active = false, onClick }: {
+Navigation.displayName = 'Navigation';
+
+const NavItem = memo(({ icon, label, active = false, onClick }: {
   icon: string;
   label: string;
   active?: boolean;
@@ -47,7 +53,7 @@ const NavItem = ({ icon, label, active = false, onClick }: {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+      className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-150 ${
         active 
           ? 'bg-primary/20 text-primary border border-primary/30' 
           : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -57,6 +63,8 @@ const NavItem = ({ icon, label, active = false, onClick }: {
       <span className="font-medium">{label}</span>
     </button>
   );
-};
+});
+
+NavItem.displayName = 'NavItem';
 
 export { Navigation };
