@@ -103,7 +103,24 @@ REQUIRED JSON FORMAT (no deviations allowed):
   ]
 }
 
-IMPORTANT: The "options" array must contain exactly 4 strings. The "correctAnswer" must be 0, 1, 2, or 3 (array index).`;
+CRITICAL REQUIREMENTS:
+1. The "options" array MUST contain exactly 4 strings (no more, no less)
+2. The "correctAnswer" must be 0, 1, 2, or 3 (array index of correct option)
+3. Each option must be a complete, distinct answer choice
+4. Ensure all 4 options are plausible but only one is correct
+
+Example format:
+{
+  "questions": [
+    {
+      "id": "q1",
+      "question": "What is 2+2?",
+      "options": ["3", "4", "5", "6"],
+      "correctAnswer": 1,
+      "explanation": "2+2 equals 4"
+    }
+  ]
+}`;
 
     console.log('Prompt length:', prompt.length);
 

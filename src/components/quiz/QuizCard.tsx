@@ -117,7 +117,9 @@ export const QuizCard: React.FC<QuizCardProps> = ({
                 <AnimatePresence>
                   {/* GUARANTEE: Always render exactly 4 options */}
                   {Array.from({ length: 4 }, (_, index) => {
-                    const option = (question.options || [])[index] || `Option ${String.fromCharCode(65 + index)}`;
+                    // Ensure we always have 4 valid options
+                    const allOptions = question.options || [];
+                    const option = allOptions[index] || `Missing Option ${String.fromCharCode(65 + index)}`;
                     return (
                     <motion.div
                       key={`option-${index}`}
