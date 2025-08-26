@@ -174,7 +174,7 @@ All colors MUST be HSL. Gaming aesthetic with educational purpose.
   }
 
   .flip-card.flipped .flip-card-inner {
-    transform: translateX(-100%);
+    transform: translateX(0);
   }
 
   .flip-card-front,

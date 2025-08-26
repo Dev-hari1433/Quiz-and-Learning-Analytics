@@ -8,10 +8,12 @@ import { useRealTimeData } from '@/hooks/useRealTimeData';
 import { useRealTimeConnection } from '@/hooks/useRealTimeConnection';
 import RealTimeIndicator from '@/components/ui/realtime-indicator';
 import RealTimeAchievementNotification from '@/components/achievements/RealTimeAchievementNotification';
+import { useNavigate } from 'react-router-dom';
 
 const Analytics = () => {
   const { userStats, quizHistory, loading } = useRealTimeData();
   const { isConnected, isUpdating } = useRealTimeConnection();
+  const navigate = useNavigate();
 
   if (loading && !userStats) {
     return (
@@ -52,14 +54,14 @@ const Analytics = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
                 className="gaming-button-primary"
-                onClick={() => window.location.href = '/generate-quiz'}
+                onClick={() => navigate('/generate-quiz')}
               >
                 <Brain className="w-4 h-4 mr-2" />
                 Take Your First Quiz
               </Button>
               <Button 
                 className="gaming-button-secondary"
-                onClick={() => window.location.href = '/smart-research'}
+                onClick={() => navigate('/smart-research')}
               >
                 <BookOpen className="w-4 h-4 mr-2" />
                 Start Researching
