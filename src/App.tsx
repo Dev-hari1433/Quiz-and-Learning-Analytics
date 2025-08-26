@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Suspense, lazy } from "react";
+import RealTimeAchievementNotification from '@/components/achievements/RealTimeAchievementNotification';
 
 // Lazy load all pages for better performance
 const Index = lazy(() => import("./pages/Index"));
@@ -57,6 +58,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
+        <RealTimeAchievementNotification />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

@@ -5,10 +5,14 @@ import { Button } from '@/components/ui/button';
 import { LeaderboardPodium } from '@/components/leaderboard/LeaderboardPodium';
 import { useNavigate } from 'react-router-dom';
 import { useRealTimeData } from '@/hooks/useRealTimeData';
+import { useRealTimeConnection } from '@/hooks/useRealTimeConnection';
+import RealTimeIndicator from '@/components/ui/realtime-indicator';
+import RealTimeAchievementNotification from '@/components/achievements/RealTimeAchievementNotification';
 
 const RealTimeLeaderboard = () => {
   const navigate = useNavigate();
   const { allUserStats, loading } = useRealTimeData();
+  const { isConnected, isUpdating } = useRealTimeConnection();
 
   if (loading) {
     return (
@@ -83,9 +87,12 @@ const RealTimeLeaderboard = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            Live <span className="bg-gradient-primary bg-clip-text text-transparent">Leaderboard</span>
-          </h1>
+          <div className="flex items-center justify-center space-x-4 mb-4">
+            <h1 className="text-4xl md:text-5xl font-bold">
+              Live <span className="bg-gradient-primary bg-clip-text text-transparent">Leaderboard</span>
+            </h1>
+            <RealTimeIndicator isConnected={isConnected} isUpdating={isUpdating} />
+          </div>
           <p className="text-xl text-muted-foreground">
             Real-time rankings updated automatically
           </p>
@@ -218,6 +225,7 @@ const RealTimeLeaderboard = () => {
         </motion.div>
 
       </div>
+      <RealTimeAchievementNotification />
     </div>
   );
 };

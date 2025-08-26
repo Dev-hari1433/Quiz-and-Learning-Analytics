@@ -14,6 +14,9 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 import { useRealTimeData } from '@/hooks/useRealTimeData';
+import { useRealTimeConnection } from '@/hooks/useRealTimeConnection';
+import RealTimeIndicator from '@/components/ui/realtime-indicator';
+import RealTimeAchievementNotification from '@/components/achievements/RealTimeAchievementNotification';
 import { useSessionUser } from '@/hooks/useSessionUser';
 
 interface RealTimeStats {
@@ -38,6 +41,7 @@ interface RealTimeStats {
 export const RealTimeDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { userStats, quizHistory, loading, error } = useRealTimeData();
+  const { isConnected, isUpdating } = useRealTimeConnection();
   const { sessionUser } = useSessionUser();
 
   if (loading && !userStats) {
@@ -181,6 +185,7 @@ export const RealTimeDashboard: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-4">
+            <RealTimeIndicator isConnected={isConnected} isUpdating={isUpdating} />
             <Badge 
               variant="default"
               className="flex items-center gap-2 bg-accent animate-pulse"
@@ -465,6 +470,7 @@ export const RealTimeDashboard: React.FC = () => {
         </motion.div>
         
       </div>
+      <RealTimeAchievementNotification />
     </div>
   );
 };

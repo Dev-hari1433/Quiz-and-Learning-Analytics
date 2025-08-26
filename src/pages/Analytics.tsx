@@ -5,9 +5,13 @@ import { Button } from '@/components/ui/button';
 import { StatsCard } from '@/components/gaming/StatsCard';
 import { RealTimePerformanceCharts } from '@/components/analytics/RealTimePerformanceCharts';
 import { useRealTimeData } from '@/hooks/useRealTimeData';
+import { useRealTimeConnection } from '@/hooks/useRealTimeConnection';
+import RealTimeIndicator from '@/components/ui/realtime-indicator';
+import RealTimeAchievementNotification from '@/components/achievements/RealTimeAchievementNotification';
 
 const Analytics = () => {
   const { userStats, quizHistory, loading } = useRealTimeData();
+  const { isConnected, isUpdating } = useRealTimeConnection();
 
   if (loading && !userStats) {
     return (
@@ -130,7 +134,10 @@ const Analytics = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h1 className="text-4xl font-bold mb-2">Analytics Dashboard</h1>
+          <div className="flex items-center justify-center space-x-4 mb-4">
+            <h1 className="text-4xl font-bold">Analytics Dashboard</h1>
+            <RealTimeIndicator isConnected={isConnected} isUpdating={isUpdating} />
+          </div>
           <p className="text-muted-foreground text-lg">Track your learning progress and insights</p>
         </motion.div>
 
@@ -230,6 +237,7 @@ const Analytics = () => {
           </div>
         </motion.div>
       </div>
+      <RealTimeAchievementNotification />
     </div>
   );
 };

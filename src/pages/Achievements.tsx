@@ -4,10 +4,14 @@ import { Trophy, Star, Target, Zap, Award } from 'lucide-react';
 import { AchievementBadge } from '@/components/gaming/AchievementBadge';
 import { EnhancedBadgeSystem, EnhancedAchievement } from '@/components/achievements/EnhancedBadgeSystem';
 import { useRealTimeData } from '@/hooks/useRealTimeData';
+import { useRealTimeConnection } from '@/hooks/useRealTimeConnection';
+import RealTimeIndicator from '@/components/ui/realtime-indicator';
+import RealTimeAchievementNotification from '@/components/achievements/RealTimeAchievementNotification';
 import AchievementChatbot from '@/components/chatbot/AchievementChatbot';
 
 const Achievements = () => {
   const { userStats, quizHistory, loading } = useRealTimeData();
+  const { isConnected, isUpdating } = useRealTimeConnection();
 
   if (loading && !userStats) {
     return (
@@ -217,10 +221,13 @@ const Achievements = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h1 className="text-4xl font-bold mb-2 flex items-center justify-center">
-            <Trophy className="w-8 h-8 mr-3 text-primary neon-glow" />
-            Achievements & Badges
-          </h1>
+          <div className="flex items-center justify-center space-x-4 mb-2">
+            <h1 className="text-4xl font-bold flex items-center">
+              <Trophy className="w-8 h-8 mr-3 text-primary neon-glow" />
+              Achievements & Badges
+            </h1>
+            <RealTimeIndicator isConnected={isConnected} isUpdating={isUpdating} />
+          </div>
           <p className="text-muted-foreground text-lg">Your learning milestones and rewards</p>
         </motion.div>
 
@@ -268,6 +275,7 @@ const Achievements = () => {
         {/* Achievement Chatbot */}
         <AchievementChatbot userStats={badgeUserStats} />
       </div>
+      <RealTimeAchievementNotification />
     </div>
   );
 };
