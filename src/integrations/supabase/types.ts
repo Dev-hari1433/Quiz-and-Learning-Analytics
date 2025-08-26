@@ -253,7 +253,7 @@ export type Database = {
     }
     Functions: {
       evaluate_achievements: {
-        Args: { p_user_id: string; p_user_name: string }
+        Args: { p_user_name: string }
         Returns: {
           achievement_name: string
           achievement_type: string
