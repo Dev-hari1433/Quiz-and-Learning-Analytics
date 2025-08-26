@@ -1,8 +1,14 @@
 import React from 'react';
-import { RealTimeActivityTimeline } from '@/components/history/RealTimeActivityTimeline';
+import { QuizHistoryManager } from '@/components/history/QuizHistoryManager';
 
 const History = () => {
-  return <RealTimeActivityTimeline />;
+  return (
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-6xl mx-auto">
+        <QuizHistoryManager />
+      </div>
+    </div>
+  );
 };
 
 export default History;
