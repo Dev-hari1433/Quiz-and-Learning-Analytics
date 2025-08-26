@@ -6,7 +6,6 @@ import { EducationScene } from '@/components/3d/EducationScene';
 import { useNavigate } from 'react-router-dom';
 import { useSessionUser } from '@/hooks/useSessionUser';
 import NamePrompt from '@/components/NamePrompt';
-import Footer from '@/components/ui/footer';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -198,10 +197,6 @@ const Index = () => {
         </div>
         
         {/* Footer */}
-        <Footer 
-          whatsappNumber="8438614059" 
-          instagramId="chocolate_boy_hari1433" 
-        />
         
       </div>
     </div>
