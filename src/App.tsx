@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import RealTimeAchievementNotification from '@/components/achievements/RealTimeAchievementNotification';
+import Footer from '@/components/ui/footer';
 
 // Lazy load all pages for better performance
 const Index = lazy(() => import("./pages/Index"));
@@ -58,6 +59,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
+        <Footer whatsappNumber="8438614059" instagramId="chocolate_boy_hari1433" />
         <RealTimeAchievementNotification />
       </BrowserRouter>
     </TooltipProvider>
