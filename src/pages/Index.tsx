@@ -6,6 +6,7 @@ import { EducationScene } from '@/components/3d/EducationScene';
 import { useNavigate } from 'react-router-dom';
 import { useSessionUser } from '@/hooks/useSessionUser';
 import NamePrompt from '@/components/NamePrompt';
+import Footer from '@/components/ui/footer';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -195,6 +196,12 @@ const Index = () => {
             />
           ))}
         </div>
+        
+        {/* Footer */}
+        <Footer 
+          whatsappNumber="YOUR_WHATSAPP_NUMBER" 
+          instagramId="YOUR_INSTAGRAM_ID" 
+        />
         
       </div>
     </div>
