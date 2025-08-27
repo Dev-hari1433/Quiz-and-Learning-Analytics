@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Trash2, Eye, Calendar, Clock, Trophy, Target,
@@ -14,6 +14,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useRealTimeData } from '@/hooks/useRealTimeData';
 import { useSessionUser } from '@/hooks/useSessionUser';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 interface QuizHistoryManagerProps {
   className?: string;
@@ -28,6 +29,7 @@ export const QuizHistoryManager: React.FC<QuizHistoryManagerProps> = ({ classNam
   const [filterDifficulty, setFilterDifficulty] = useState('all');
   const [selectedQuiz, setSelectedQuiz] = useState<string | null>(null);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+  const navigate = useNavigate();
 
   const handleDeleteQuiz = async (quizId: string) => {
     if (!sessionUser) return;
@@ -76,19 +78,22 @@ export const QuizHistoryManager: React.FC<QuizHistoryManagerProps> = ({ classNam
     }
   };
 
-  // Filter quizzes based on search and filters
-  const filteredQuizzes = quizHistory.filter(quiz => {
-    const matchesSearch = quiz.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         quiz.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSubject = filterSubject === 'all' || quiz.subject === filterSubject;
-    const matchesDifficulty = filterDifficulty === 'all' || quiz.difficulty === filterDifficulty;
-    
-    return matchesSearch && matchesSubject && matchesDifficulty;
-  });
+  // Filter quizzes based on search and filters (memoized for performance)
+  const filteredQuizzes = useMemo(() => {
+    const normalizedSearch = searchTerm.toLowerCase();
+    return quizHistory.filter(quiz => {
+      const matchesSearch =
+        quiz.subject.toLowerCase().includes(normalizedSearch) ||
+        quiz.title.toLowerCase().includes(normalizedSearch);
+      const matchesSubject = filterSubject === 'all' || quiz.subject === filterSubject;
+      const matchesDifficulty = filterDifficulty === 'all' || quiz.difficulty === filterDifficulty;
+      return matchesSearch && matchesSubject && matchesDifficulty;
+    });
+  }, [quizHistory, searchTerm, filterSubject, filterDifficulty]);
 
-  // Get unique subjects and difficulties for filters
-  const subjects = [...new Set(quizHistory.map(q => q.subject))];
-  const difficulties = [...new Set(quizHistory.map(q => q.difficulty))];
+  // Get unique subjects and difficulties for filters (memoized)
+  const subjects = useMemo(() => [...new Set(quizHistory.map(q => q.subject))], [quizHistory]);
+  const difficulties = useMemo(() => [...new Set(quizHistory.map(q => q.difficulty))], [quizHistory]);
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-accent';
@@ -150,7 +155,7 @@ export const QuizHistoryManager: React.FC<QuizHistoryManagerProps> = ({ classNam
         </p>
         <Button 
           className="gaming-button-primary"
-          onClick={() => window.location.href = '/generate-quiz'}
+          onClick={() => navigate('/generate-quiz')}
         >
           <Brain className="w-4 h-4 mr-2" />
           Generate Your First Quiz
